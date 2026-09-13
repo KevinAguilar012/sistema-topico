@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Tópico - IESTP Carhuaz</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- PANTALLA DE ACCESO (LOGIN) -->
+    <div id="loginView" class="login-card">
+        <div class="login-header">
+            <img src="assets/images/logo-istec.png" alt="logo IESTP Carhuaz" class="login-logo">
+            <h2>IESTP CARHUAZ</h2>
+            <p>Sistema Integral del Tópico Institucional</p>
+        </div>
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" placeholder="Ingrese su usuario" required autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" placeholder="Ingrese su contraseña" required>
+            </div>
+            <button type="submit" class="btn-primary">Ingresar al Sistema</button>
+            <p id="errorMsg" class="error-msg hidden">Ingrese credenciales válidas.</p>
+            <div id="loginDbStatus" style="font-size: 11px; text-align: center; margin-top: 14px; color: #4a5568;">
+                <span id="loginDbDot">🟡</span> Base de Datos: <strong id="loginDbText">Verificando...</strong>
+            </div>
+        </form>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL (SISTEMA DE 7 FORMULARIOS) -->
+    <div id="dashboardView" class="app-container hidden">
+        
+        <!-- BARRA DE MENÚ SUPERIOR -->
+        <nav class="menu-bar">
+            <div class="user-info-bar">
+                <span id="dbStatusBadge" class="db-status-badge db-offline" title="Estado de la Base de Datos">🟡 Modo Local (Sin BD)</span>
+                <span id="userDisplayName">Lic. En Enfermería</span> | 
+                <a href="#" id="btnLogout" style="color: #feb2b2; text-decoration: none;">Salir</a>
+            </div>
+        </nav>
+
+        <!-- ÁREA DE TRABAJO -->
+        <div class="workspace">
+            
+            <aside class="sidebar">
+                <h4>Navegación Tópico</h4>
+                <ul>
+                    <li onclick="mostrarSeccion('f1_paciente')">Nuevo Paciente</li>
+                    <li onclick="mostrarSeccion('f2_atencion')">Atención / Triaje</li>
+                    <li onclick="mostrarSeccion('f3_historial')">Historial Clínico</li>
+                    <li onclick="mostrarSeccion('f4_botiquin')">Botiquín y Stock</li>
+                    <li onclick="mostrarSeccion('f5_derivacion')">Derivaciones</li>
+                    <li onclick="mostrarSeccion('f6_reportes')">Vigilancia MINSA</li>
+                    <li onclick="mostrarSeccion('f7_usuarios')">Gest. Usuarios</li>
+                </ul>
+            </aside>
+
+            <main class="content-area">
+                
+                <!-- FORMULARIO 1: REGISTRO Y FILIACIÓN DEL PACIENTE -->
+                <div id="secF1" class="form-module">
+                    <div class="ficha-header">
+                        <h2>REGISTRO Y FILIACIÓN DEL PACIENTE</h2>
+                        <p>IESTP Carhuaz - Alta de Alumnos, Personal y Externos</p>
+                    </div>
+
+                    <form id="formF1Paciente">
+
+                        <!-- DATOS ADMINISTRATIVOS Y DE ATENCIÓN -->
+                        <fieldset class="form-section highlight-box">
+                            <legend>Datos de Ingreso y Registro Institucional</legend>
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f1Establecimiento">Establecimiento de Salud:</label>
+                                    <input type="text" id="f1Establecimiento" value="IESTP CARHUAZ - TÓPICO INSTITUCIONAL" readonly style="background-color: #edf2f7; font-weight: bold;">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1FechaHoraReg">Fecha y Hora de Registro:</label>
+                                    <input type="datetime-local" id="f1FechaHoraReg" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1NumHistoria">N.° Historia Clínica:</label>
+                                    <input type="text" id="f1NumHistoria" placeholder="Ej. HC-74859612" required style="font-weight: bold; color: #2b6cb0;">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- I. DATOS DE IDENTIFICACIÓN -->
+                        <fieldset class="form-section">
+                            <legend>I. Datos de Identificación del Paciente</legend>
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f1Dni">DNI / Documento de Identidad:</label>
+                                    <input type="text" id="f1Dni" maxlength="8" minlength="8" pattern="[0-9]{8}" inputmode="numeric" required placeholder="8 dígitos numéricos" title="Debe ingresar exactamente 8 dígitos numéricos" oninput="generarHistoriaF1(this.value)">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1ApePaterno">Apellido Paterno:</label>
+                                    <input type="text" id="f1ApePaterno" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1ApeMaterno">Apellido Materno:</label>
+                                    <input type="text" id="f1ApeMaterno" required>
+                                </div>
+                            </div>
+
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f1Nombres">Nombres:</label>
+                                    <input type="text" id="f1Nombres" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1FechaNac">Fecha de Nacimiento:</label>
+                                    <input type="date" id="f1FechaNac" required onchange="calcularEdadF1(this.value)">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1Edad">Edad (Calculada automáticamente):</label>
+                                    <input type="number" id="f1Edad" readonly style="background-color: #edf2f7; font-weight: bold;" placeholder="0">
+                                </div>
+                            </div>
+
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f1Genero">Género:</label>
+                                    <select id="f1Genero" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Femenino">Femenino</option>
+                                        <option value="Otro">Otro / No precisa</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1Nacionalidad">Nacionalidad:</label>
+                                    <select id="f1Nacionalidad" required>
+                                        <option value="Peruana" selected>Peruana</option>
+                                        <option value="Venezolana">Venezolana</option>
+                                        <option value="Colombiana">Colombiana</option>
+                                        <option value="Ecuatoriana">Ecuatoriana</option>
+                                        <option value="Boliviana">Boliviana</option>
+                                        <option value="Chilena">Chilena</option>
+                                        <option value="Argentina">Argentina</option>
+                                        <option value="Otra">Otra nacionalidad</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1Etnia">Etnia / Raza (Vigilancia MINSA):</label>
+                                    <select id="f1Etnia">
+                                        <option value="Mestizo">Mestizo</option>
+                                        <option value="Andino">Andino</option>
+                                        <option value="Afroperuano">Afroperuano</option>
+                                        <option value="Amazónico">Amazónico</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-grid-2">
+                                <div class="input-group">
+                                    <label for="f1Programa">Programa de Estudios / Condición:</label>
+                                    <select id="f1Programa" required>
+                                        <option value="Enfermería Técnica">Enfermería Técnica</option>
+                                        <option value="Arquitectura de Plataformas y Servicios de Tecnologías de la Información">Arquitectura de Plataformas y Servicios de TI</option>
+                                        <option value="Otros (Docentes, Administrativos y Externos)">Otros (Docentes, Administrativos y Externos)</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1Telefono">Teléfono / Celular del Paciente:</label>
+                                    <input type="text" id="f1Telefono" maxlength="9" minlength="9" pattern="[0-9]{9}" inputmode="numeric" placeholder="9 dígitos (9XXXXXXXX)" title="Debe ingresar exactamente 9 dígitos numéricos">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- II. UBICACIÓN Y RESIDENCIA -->
+                        <fieldset class="form-section">
+                            <legend>II. Ubicación y Residencia Actual</legend>
+                            <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label for="f1Dep">Departamento:</label>
+                                        <select id="f1Dep" required onchange="cargarProvincias()">
+                                            <!-- Se llena dinámicamente con JS -->
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="f1Prov">Provincia:</label>
+                                        <select id="f1Prov" required onchange="cargarDistritos()">
+                                            <!-- Se llena dinámicamente con JS -->
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="f1Dist">Distrito:</label>
+                                        <select id="f1Dist" required>
+                                            <!-- Se llena dinámicamente con JS -->
+                                        </select>
+                                    </div>
+                                </div>
+                            <div class="form-grid-2">
+                                <div class="input-group">
+                                    <label for="f1Domicilio">Dirección / Vía / Jr. / Av. / Barrio:</label>
+                                    <input type="text" id="f1Domicilio" required placeholder="Ej. Jr. Comercio 123 - Barrio Tambo">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1Referencia">Referencia de Domicilio:</label>
+                                    <input type="text" id="f1Referencia" placeholder="Ej. Frente al mercado central">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- III. DATOS DEL APODERADO O CONTACTO DE EMERGENCIA (OBLIGATORIO Y GENERAL) -->
+                        <fieldset class="form-section highlight-box">
+                            <legend>III. Datos del Apoderado / Familiar / Contacto de Emergencia</legend>
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f1ApoDni">DNI del Apoderado:</label>
+                                    <input type="text" id="f1ApoDni" maxlength="8" minlength="8" pattern="[0-9]{8}" inputmode="numeric" placeholder="8 dígitos numéricos" required title="Debe ingresar exactamente 8 dígitos numéricos">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1ApoNombres">Nombres y Apellidos Completos:</label>
+                                    <input type="text" id="f1ApoNombres" required placeholder="Nombres completos">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1ApoVinculo">Parentesco / Vínculo:</label>
+                                    <select id="f1ApoVinculo" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="Padre">Padre</option>
+                                        <option value="Madre">Madre</option>
+                                        <option value="Hermano(a)">Hermano(a)</option>
+                                        <option value="Cónyuge/Pareja">Cónyuge / Pareja</option>
+                                        <option value="Tutor Legal">Tutor Legal</option>
+                                        <option value="Otro">Otro familiar / Amigo</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f1ApoTelefono">Teléfono / Celular de Emergencia:</label>
+                                    <input type="text" id="f1ApoTelefono" required maxlength="9" minlength="9" pattern="[0-9]{9}" inputmode="numeric" placeholder="9 dígitos (9XXXXXXXX)" title="Debe ingresar exactamente 9 dígitos numéricos">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1ApoOcupacion">Ocupación del Apoderado:</label>
+                                    <input type="text" id="f1ApoOcupacion" placeholder="Ej. Comerciante, Docente, etc.">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f1ApoDomicilio">Domicilio del Apoderado:</label>
+                                    <input type="text" id="f1ApoDomicilio" placeholder="Distrito / Dirección">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save">💾 Guardar Ficha de Paciente</button>
+                            <button type="reset" class="btn-cancel">🧹 Limpiar Formulario</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- FORMULARIO 2: ATENCIÓN CLÍNICA Y TRIAJE -->
+                <div id="secF2" class="form-module hidden">
+                    <div class="ficha-header">
+                        <h2>FICHA DE ATENCIÓN CLÍNICA Y TRIAJE</h2>
+                        <p>Evaluación Diagnóstica y Protocolo de Atención en Tópico</p>
+                    </div>
+
+                    <!-- BÚSQUEDA PREVIA DE PACIENTE (SEPARADA DEL FORMULARIO PRINCIPAL) -->
+                    <div class="search-box">
+                        <label for="f2BuscarDni"><strong>Buscar Paciente por DNI:</strong></label>
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                            <input type="text" id="f2BuscarDni" placeholder="8 dígitos numéricos" maxlength="8" minlength="8" pattern="[0-9]{8}" inputmode="numeric" title="Debe ingresar exactamente 8 dígitos numéricos">
+                            <button type="button" class="btn-primary" onclick="buscarPacienteF2()" style="width: auto;">🔍 Buscar</button>
+                        </div>
+
+                        <!-- TARJETA DESPLEGABLE CON LOS DATOS ENCONTRADOS -->
+                        <div id="pacienteEncontradoInfo" class="paciente-info-card hidden" style="margin-top: 15px;">
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f2Dni">DNI:</label>
+                                    <input type="text" id="f2Dni" readonly style="background-color: #edf2f7;">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f2NombreCompleto">Nombres y Apellidos:</label>
+                                    <input type="text" id="f2NombreCompleto" readonly style="background-color: #edf2f7;">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f2Programa">Programa / Área:</label>
+                                    <input type="text" id="f2Programa" readonly style="background-color: #edf2f7;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FORMULARIO ÚNICO DE ATENCIÓN -->
+                    <form id="formF2Atencion">
+                        
+                        <!-- SELECCIÓN DE PROTOCOLO -->
+                        <fieldset class="form-section highlight-box" style="margin-top: 15px;">
+                            <legend>Selección de Tipo de Atención</legend>
+                            <div class="input-group">
+                                <label for="f2DiagnosticoMain"><strong>TIPO DE DIAGNÓSTICO / EVALUACIÓN:</strong></label>
+                                <select id="f2DiagnosticoMain" required onchange="cambiarFichaAtencion(this.value)">
+                                    <option value="">-- Seleccione Tipo de Ficha --</option>
+                                    <option value="IRA">FICHA DE ATENCIÓN – INFECCIONES RESPIRATORIAS AGUDAS (IRA)</option>
+                                    <option value="EDA">FICHA DE ATENCIÓN – ENFERMEDADES DIARREICAS AGUDAS (EDA)</option>
+                                    <option value="GENERAL">Atención General / Otros</option>
+                                </select>
+                            </div>
+                        </fieldset>
+
+                        <!-- CONTENEDOR DINÁMICO 1: FICHA DE ATENCIÓN - IRA -->
+                        <div id="fichaIRA" class="ficha-dinamica hidden">
+                            <h3 class="sub-title-ficha">FICHA DE ATENCIÓN – INFECCIONES RESPIRATORIAS AGUDAS (IRA)</h3>
+
+                            <fieldset class="form-section">
+                                <legend>1. Datos de Identificación</legend>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label>Establecimiento de Salud:</label>
+                                        <input type="text" value="IESTP CARHUAZ - TÓPICO" readonly style="background: #edf2f7;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraFechaHora">Fecha y Hora de Atención:</label>
+                                        <input type="datetime-local" id="iraFechaHora">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraDni">N.° de Historia Clínica / DNI:</label>
+                                        <input type="text" id="iraDni" readonly style="background: #edf2f7;">
+                                    </div>
+                                </div>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label for="iraNombreCompleto">Nombres y Apellidos:</label>
+                                        <input type="text" id="iraNombreCompleto" readonly style="background: #edf2f7;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraEdadSexo">Edad / Género:</label>
+                                        <input type="text" id="iraEdadSexo" readonly style="background: #edf2f7;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraDireccion">Dirección:</label>
+                                        <input type="text" id="iraDireccion" readonly style="background: #edf2f7;">
+                                    </div>
+                                </div>
+                                <div class="input-group" style="margin-top: 10px;">
+                                    <label for="iraAcompanante">Acompañante / Responsable:</label>
+                                    <input type="text" id="iraAcompanante" placeholder="Nombre y contacto del responsable">
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>2. Motivo de Consulta y Anamnesis (Síntomas)</legend>
+                                <div class="checkbox-group-grid">
+                                    <label><input type="checkbox" id="iraSintTos"> Tos</label>
+                                    <label><input type="checkbox" id="iraSintFiebre"> Fiebre</label>
+                                    <label><input type="checkbox" id="iraSintDifResp"> Dificultad respiratoria</label>
+                                    <label><input type="checkbox" id="iraSintDolGarganta"> Dolor de garganta</label>
+                                    <label><input type="checkbox" id="iraSintRinorrea"> Rinorrea</label>
+                                </div>
+                                <div class="form-grid-2" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="iraTiempoEnf">Tiempo de Enfermedad (días/horas):</label>
+                                        <input type="text" id="iraTiempoEnf" placeholder="Ej. 2 días">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraAntecedentes">Antecedentes Relevantes:</label>
+                                        <input type="text" id="iraAntecedentes" placeholder="Asma, alergias, etc.">
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>3. Evaluación Clínica y Triaje</legend>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label for="iraTemp">Temperatura (°C):</label>
+                                        <input type="number" step="0.1" id="iraTemp" placeholder="37.0">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraFr">Frecuencia Respiratoria (rpm):</label>
+                                        <input type="number" id="iraFr" placeholder="18">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraFc">Frecuencia Cardíaca (ppm):</label>
+                                        <input type="number" id="iraFc" placeholder="72">
+                                    </div>
+                                </div>
+                                <div class="form-grid-3" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="iraSpo2">Saturación de O₂ (%):</label>
+                                        <input type="number" id="iraSpo2" placeholder="98">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraPeso">Peso (kg):</label>
+                                        <input type="number" step="0.1" id="iraPeso" placeholder="60.5">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraEstadoGeneral">Estado General:</label>
+                                        <select id="iraEstadoGeneral">
+                                            <option value="Buen estado">Buen estado</option>
+                                            <option value="Regular estado">Regular estado</option>
+                                            <option value="Mal estado">Mal estado</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-grid-3" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="iraSignosAlarma">Signos de Alarma:</label>
+                                        <input type="text" id="iraSignosAlarma" placeholder="Cianosis, alteración sensorio...">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraTiraje">Tiraje Intercostal:</label>
+                                        <select id="iraTiraje">
+                                            <option value="Ausente">Ausente</option>
+                                            <option value="Presente">Presente</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraSibilancias">Sibilancias / Estridor:</label>
+                                        <select id="iraSibilancias">
+                                            <option value="Ninguno">Ninguno</option>
+                                            <option value="Sibilancias">Sibilancias</option>
+                                            <option value="Estridor">Estridor</option>
+                                            <option value="Ambos">Ambos</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>4. Clasificación / Diagnóstico IRA</legend>
+                                <div class="input-group">
+                                    <label for="iraClasificacion">Diagnóstico Confirmado:</label>
+                                    <select id="iraClasificacion">
+                                        <option value="">Seleccione clasificación...</option>
+                                        <option value="IRA sin neumonía">IRA sin neumonía</option>
+                                        <option value="Neumonía">Neumonía</option>
+                                        <option value="Neumonía grave / enfermedad muy grave">Neumonía grave / enfermedad muy grave</option>
+                                        <option value="Bronquiolitis">Bronquiolitis</option>
+                                        <option value="Faringitis / amigdalitis">Faringitis / amigdalitis</option>
+                                        <option value="Otitis">Otitis</option>
+                                        <option value="Otros">Otros</option>
+                                    </select>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>5. Conducta y Tratamiento</legend>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label for="iraMedicamento">Medicamento:</label>
+                                        <input type="text" id="iraMedicamento" placeholder="Ej. Paracetamol">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraDosis">Dosis:</label>
+                                        <input type="text" id="iraDosis" placeholder="Ej. 500 mg">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraVia">Vía de administración:</label>
+                                        <select id="iraVia">
+                                            <option value="Oral">Oral</option>
+                                            <option value="Intramuscular">Intramuscular</option>
+                                            <option value="Inhalatoria">Inhalatoria</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-grid-2" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="iraFrecuencia">Frecuencia y Duración:</label>
+                                        <input type="text" id="iraFrecuencia" placeholder="Ej. Cada 8 horas por 3 días">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraMedidasGrales">Medidas Generales:</label>
+                                        <input type="text" id="iraMedidasGrales" placeholder="Reposo, reposición de líquidos...">
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>6. Consejería y Signos de Alarma</legend>
+                                <div class="form-grid-2">
+                                    <div class="input-group">
+                                        <label for="iraCuidadosCasa">Cuidados en Casa / Hidratación / Alimentación:</label>
+                                        <textarea id="iraCuidadosCasa" rows="2" placeholder="Continuar alimentación, incrementar líquidos templados..."></textarea>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraSignosRegreso">Signos por los que debe regresar inmediatamente:</label>
+                                        <textarea id="iraSignosRegreso" rows="2" placeholder="Dificultad para respirar, fiebre persistente, hundimiento de costillas..."></textarea>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>7. Seguimiento y Firma</legend>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label for="iraProximoControl">Próximo Control:</label>
+                                        <input type="date" id="iraProximoControl">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraReferencia">Referencia / Contrarreferencia:</label>
+                                        <select id="iraReferencia">
+                                            <option value="No requiere">No requiere</option>
+                                            <option value="Referido a Hospital de Carhuaz">Referido a Hospital de Carhuaz</option>
+                                            <option value="Referido a Centro de Salud">Referido a Centro de Salud</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="iraPersonal">Atendido por (Firma/Sello):</label>
+                                        <input type="text" id="iraPersonal" readonly value="Lic. Enfermería - Tópico IESTP Carhuaz" style="background: #edf2f7;">
+                                    </div>
+                                </div>
+                                <div class="input-group" style="margin-top: 10px;">
+                                    <label for="iraObservaciones">Observaciones Adicionales:</label>
+                                    <textarea id="iraObservaciones" rows="2"></textarea>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <!-- CONTENEDOR DINÁMICO 2: FICHA DE ATENCIÓN - EDA -->
+                        <div id="fichaEDA" class="ficha-dinamica hidden">
+                            <h3 class="sub-title-ficha">VIGILANCIA DE EDA (CIE 10: A00-A09) - FICHA CLÍNICA</h3>
+
+                            <fieldset class="form-section">
+                                <legend>I. Datos Generales</legend>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label for="edaFechaNotif">Fecha de Notificación:</label>
+                                        <input type="date" id="edaFechaNotif">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaFechaInvest">Fecha de Investigación:</label>
+                                        <input type="date" id="edaFechaInvest">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Establecimiento Notificante:</label>
+                                        <input type="text" value="IESTP CARHUAZ - TÓPICO" readonly style="background: #edf2f7;">
+                                    </div>
+                                </div>
+                                <div class="form-grid-2" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="edaCaptacion">Captación del Caso:</label>
+                                        <select id="edaCaptacion">
+                                            <option value="Pasiva">Pasiva</option>
+                                            <option value="Activa">Activa</option>
+                                            <option value="Vigilancia comunal">Vigilancia comunal</option>
+                                            <option value="Seguimiento de contactos">Seguimiento de contactos</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaRenaes">Código RENAES:</label>
+                                        <input type="text" id="edaRenaes" placeholder="Ej. 00001234">
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>II. Datos del Paciente y Ubicación</legend>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label>Nombres y Apellidos:</label>
+                                        <input type="text" id="edaNombreCompleto" readonly style="background: #edf2f7;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>DNI / N.° Historia Clínica:</label>
+                                        <input type="text" id="edaDni" readonly style="background: #edf2f7;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Edad / Género:</label>
+                                        <input type="text" id="edaEdadSexo" readonly style="background: #edf2f7;">
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-2" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="edaApoderado">Si es menor de edad, Nombre del Padre/Madre/Apoderado:</label>
+                                        <input type="text" id="edaApoderado" placeholder="Nombre completo del responsable">
+                                    </div>
+                                    <div class="form-grid-2">
+                                        <div class="input-group">
+                                            <label for="edaVinculo">Vínculo:</label>
+                                            <input type="text" id="edaVinculo" placeholder="Padre/Madre/Tutor">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="edaOcupacionApoderado">Ocupación:</label>
+                                            <input type="text" id="edaOcupacionApoderado">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-3" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="edaUbicacionDep">Departamento / Provincia / Distrito:</label>
+                                        <input type="text" id="edaUbicacionDep" value="Ancash / Carhuaz / Carhuaz">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaDomicilio">Domicilio Actual (Dirección / Vía):</label>
+                                        <input type="text" id="edaDomicilio" placeholder="Av., Jr., Calle y N°">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaReferencia">Referencia de Domicilio:</label>
+                                        <input type="text" id="edaReferencia" placeholder="Ej. Frente al parque central">
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>III. Datos Clínicos y Evaluación EDA</legend>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label for="edaFechaSintomas">Fecha Inicio de Síntomas:</label>
+                                        <input type="date" id="edaFechaSintomas">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaTipoDiarrea">Tipo de Diarrea:</label>
+                                        <select id="edaTipoDiarrea">
+                                            <option value="">Seleccione tipo...</option>
+                                            <option value="EDA acuosa">EDA acuosa</option>
+                                            <option value="EDA disentérica">EDA disentérica</option>
+                                            <option value="EDA persistente">EDA persistente</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaNumDeposiciones">N.° Deposiciones por día:</label>
+                                        <input type="number" id="edaNumDeposiciones" min="1" placeholder="Ej. 5">
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 15px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                    <h4 style="color: #2c5282; margin-bottom: 8px;">Tratamiento y Plan de Deshidratación:</h4>
+                                    <div class="form-grid-3">
+                                        <div class="input-group">
+                                            <label for="edaPlanTratamiento">Plan de Tratamiento:</label>
+                                            <select id="edaPlanTratamiento">
+                                                <option value="Plan A">Plan A (Casa / Reposición SRO)</option>
+                                                <option value="Plan B">Plan B (Tópico / SRO 4 horas)</option>
+                                                <option value="Plan C">Plan C (Urgencia / Vía EV)</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="edaTratAntibiotico">Tratamiento Antibiótico:</label>
+                                            <select id="edaTratAntibiotico">
+                                                <option value="No">No</option>
+                                                <option value="Si">Sí</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="edaAntibioticoUsado">Antibiótico Prescrito:</label>
+                                            <select id="edaAntibioticoUsado">
+                                                <option value="Ninguno">Ninguno</option>
+                                                <option value="Ciprofloxacina">Ciprofloxacina</option>
+                                                <option value="Cotrimoxazol">Cotrimoxazol</option>
+                                                <option value="Doxiciclina">Doxiciclina</option>
+                                                <option value="Tetraciclina">Tetraciclina</option>
+                                                <option value="Cloramfenicol">Cloramfenicol</option>
+                                                <option value="Otros">Otros</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 15px;">
+                                    <h4 style="color: #2c5282; margin-bottom: 8px;">Evolución del Paciente:</h4>
+                                    <div class="form-grid-3">
+                                        <div class="input-group">
+                                            <label for="edaEvolAmbulatorio">Ambulatorio:</label>
+                                            <select id="edaEvolAmbulatorio">
+                                                <option value="Si">Sí</option>
+                                                <option value="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="edaHospitalizado">Hospitalizado / Derivado:</label>
+                                            <select id="edaHospitalizado">
+                                                <option value="No">No</option>
+                                                <option value="Si">Sí</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="edaFechaHospitalizado">Fecha de Traslado / Referencia:</label>
+                                            <input type="date" id="edaFechaHospitalizado">
+                                        </div>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>IV. Muestra de Laboratorio (Si Aplica)</legend>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label for="edaTipoMuestra">Tipo de Muestra:</label>
+                                        <select id="edaTipoMuestra">
+                                            <option value="Ninguna">Ninguna</option>
+                                            <option value="Heces">Heces</option>
+                                            <option value="Hisopado rectal">Hisopado rectal</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaFechaTomaMuestra">Fecha de Toma de Muestra:</label>
+                                        <input type="date" id="edaFechaTomaMuestra">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaMicroorganismo">Microorganismo Aislado / Resultado:</label>
+                                        <input type="text" id="edaMicroorganismo" placeholder="Ej. Shigella, Salmonella, Vibrio...">
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>V. Persona que Investiga y Atiende el Caso</legend>
+                                <div class="form-grid-2">
+                                    <div class="input-group">
+                                        <label for="edaInvestigadorNombre">Nombre del Personal de Salud:</label>
+                                        <input type="text" id="edaInvestigadorNombre" placeholder="Lic. en Enfermería responsable">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaInvestigadorCargo">Cargo / Firma y Sello:</label>
+                                        <input type="text" id="edaInvestigadorCargo" readonly value="Lic. Enfermería - Tópico IESTP Carhuaz" style="background: #edf2f7;">
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <div class="form-actions" style="margin-top: 20px;">
+                            <button type="submit" class="btn-save">💾 Guardar Ficha Clínica y Generar Receta</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- FORMULARIO 3: HISTORIAL DE ATENCIONES -->
+                <div id="secF3" class="form-module hidden">
+                    <div class="ficha-header">
+                        <h2>HISTORIAL CLÍNICO Y CONSULTAS</h2>
+                        <p>Búsqueda y Seguimiento Cronológico de Atenciones en Tópico</p>
+                    </div>
+
+                    <div class="form-grid-3" style="margin-bottom: 15px;">
+                        <div class="input-group">
+                            <label for="f3FiltroDni">Filtrar por DNI / Apellido:</label>
+                            <input type="text" id="f3FiltroDni" placeholder="Escriba para filtrar..." onkeyup="filtrarTablaF3()">
+                        </div>
+                        <div class="input-group">
+                            <label for="f3FiltroDiag">Filtrar por Diagnóstico:</label>
+                            <select id="f3FiltroDiag" onchange="filtrarTablaF3()">
+                                <option value="TODOS">Todos los Casos</option>
+                                <option value="IRA">Solo IRAS</option>
+                                <option value="EDA">Solo EDAS</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha / Hora</th>
+                                    <th>DNI</th>
+                                    <th>Paciente</th>
+                                    <th>Programa</th>
+                                    <th>Diagnóstico</th>
+                                    <th>Temp.</th>
+                                    <th>Destino</th>
+                                    <th>Licenciada</th>
+                                </tr>
+                            </thead>
+                            <tbody id="f3TablaBody">
+                                <tr><td colspan="8" style="text-align: center;">No hay registros de atención.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO 4: CONTROL E INVENTARIO DE BOTIQUÍN -->
+                <div id="secF4" class="form-module hidden">
+                    <div class="ficha-header">
+                        <h2>INVENTARIO DE BOTIQUÍN Y MEDICAMENTOS</h2>
+                        <p>Ingreso de Medicamentos y Consulta de Stock Disponible</p>
+                    </div>
+
+                    <form id="formF4Medicamento">
+                        <fieldset class="form-section">
+                            <legend>I. Registro / Ingreso de Insumo Médico</legend>
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f4Codigo">Código Insumo:</label>
+                                    <input type="text" id="f4Codigo" placeholder="Ej. MED-001" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f4Nombre">Nombre del Medicamento:</label>
+                                    <input type="text" id="f4Nombre" placeholder="Ej. Paracetamol 500mg" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f4Categoria">Categoría de Uso:</label>
+                                    <select id="f4Categoria">
+                                        <option value="Tratamiento IRA">Tratamiento IRA</option>
+                                        <option value="Tratamiento EDA">Tratamiento EDA</option>
+                                        <option value="Primeros Auxilios">Primeros Auxilios</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f4Cantidad">Cantidad Aportada:</label>
+                                    <input type="number" id="f4Cantidad" min="1" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f4Vencimiento">Fecha de Vencimiento:</label>
+                                    <input type="date" id="f4Vencimiento" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>&nbsp;</label>
+                                    <button type="submit" class="btn-save" style="width: 100%;">➕ Añadir al Botiquín</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+
+                    <h3 style="margin: 15px 0 10px 0; color: #2b6cb0;">Disponibilidad de Medicamentos en Stock</h3>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Medicamento</th>
+                                    <th>Categoría</th>
+                                    <th>Stock Disponible</th>
+                                    <th>Vencimiento</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="f4TablaBody">
+                                <tr><td colspan="6" style="text-align: center;">Botiquín vacío.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO 5: FICHA DE DERIVACIÓN EXTERNA -->
+                <div id="secF5" class="form-module hidden">
+                    <div class="ficha-header">
+                        <h2>HOJA DE DERIVACIÓN Y REFERENCIA EXTERNA</h2>
+                        <p>Traslado de Pacientes a Centro de Salud u Hospital de Carhuaz</p>
+                    </div>
+
+                    <form id="formF5Derivacion">
+                        <fieldset class="form-section">
+                            <legend>Datos de la Transferencia</legend>
+                            <div class="form-grid-2">
+                                <div class="input-group">
+                                    <label for="f5Dni">DNI Paciente a Derivar:</label>
+                                    <input type="text" id="f5Dni" required maxlength="8" minlength="8" pattern="[0-9]{8}" inputmode="numeric" placeholder="8 dígitos numéricos" title="Debe ingresar exactamente 8 dígitos numéricos">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f5Establecimiento">Establecimiento de Destino:</label>
+                                    <select id="f5Establecimiento" required>
+                                        <option value="Hospital de Apoyo de Carhuaz">Hospital de Apoyo de Carhuaz</option>
+                                        <option value="Centro de Salud Carhuaz">Centro de Salud Carhuaz</option>
+                                        <option value="ESSALUD - Carhuaz">ESSALUD - Carhuaz</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="input-group">
+                                    <label for="f5Motivo">Motivo de la Derivación / Gravedad:</label>
+                                    <textarea id="f5Motivo" rows="3" required placeholder="Sintomatología grave, deshidratación severa, neumonía presuntiva..."></textarea>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f5Acompanante">Familiar o Responsable Notificado:</label>
+                                    <input type="text" id="f5Acompanante" placeholder="Nombre completo del familiar avisado">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save">📄 Generar Ficha de Derivación</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- FORMULARIO 6: REPORTES Y VIGILANCIA EPIDEMIOLÓGICA -->
+                <div id="secF6" class="form-module hidden">
+                    <div class="ficha-header">
+                        <h2>FORMULARIO 6: VIGILANCIA EPIDEMIOLÓGICA (MINSA / INSTITUCIONAL)</h2>
+                        <p>Consolidado y Resumen Estadístico de Casos IRAS / EDAS</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card stat-ira">
+                            <h3>Casos Totales IRAS</h3>
+                            <span id="f6CntIra">0</span>
+                        </div>
+                        <div class="stat-card stat-eda">
+                            <h3>Casos Totales EDAS</h3>
+                            <span id="f6CntEda">0</span>
+                        </div>
+                        <div class="stat-card stat-total">
+                            <h3>Total Atenciones Tópico</h3>
+                            <span id="f6CntTotal">0</span>
+                        </div>
+                    </div>
+
+                    <h3 style="margin: 20px 0 10px 0; color: #2b6cb0;">Distribución de Casos por Programa de Estudio</h3>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Programa de Estudios / Condición</th>
+                                    <th>Casos IRAS</th>
+                                    <th>Casos EDAS</th>
+                                    <th>Total Afectados</th>
+                                </tr>
+                            </thead>
+                            <tbody id="f6TablaProgramas">
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO 7: GESTIÓN DE PERSONAL Y USUARIOS -->
+                <div id="secF7" class="form-module hidden">
+                    <div class="ficha-header">
+                        <h2>GESTIÓN DE PERSONAL DE TÓPICO</h2>
+                        <p>Registro de Licenciadas en Enfermería y Personal de Apoyo</p>
+                    </div>
+
+                    <form id="formF7Usuario">
+                        <fieldset class="form-section">
+                            <legend>Registrar Nuevo Usuario / Personal</legend>
+                            <div class="form-grid-3">
+                                <div class="input-group">
+                                    <label for="f7Nombre">Nombre Completo:</label>
+                                    <input type="text" id="f7Nombre" required placeholder="Lic. María Pérez">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f7Cep">Código CEP / N° Licencia:</label>
+                                    <input type="text" id="f7Cep" required placeholder="CEP-12345">
+                                </div>
+                                <div class="input-group">
+                                    <label for="f7User">Nombre de Usuario:</label>
+                                    <input type="text" id="f7User" required placeholder="mperez">
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="input-group">
+                                    <label for="f7Pass">Contraseña de Acceso:</label>
+                                    <input type="password" id="f7Pass" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f7Turno">Turno Asignado:</label>
+                                    <select id="f7Turno">
+                                        <option value="Mañana">Mañana</option>
+                                        <option value="Tarde">Tarde</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save">👤 Registrar Personal</button>
+                        </div>
+                    </form>
+
+                    <h3 style="margin: 15px 0 10px 0; color: #2b6cb0;">Personal Habilitado</h3>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre del Personal</th>
+                                    <th>N° CEP</th>
+                                    <th>Usuario</th>
+                                    <th>Turno</th>
+                                </tr>
+                            </thead>
+                            <tbody id="f7TablaBody">
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- CUADRO FLOTANTE (MODAL): PRESCRIPCIÓN Y POSOLOGÍA RECOMENDADA -->
+    <div id="modalReceta" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>FICHA RECOMENDADA Y DOSIFICACIÓN - TÓPICO IESTP CARHUAZ</h3>
+            </div>
+            <div class="modal-body" id="modalRecetaContent">
+                <!-- Se construye dinámicamente con JS -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-primary" onclick="cerrarModal()">Imprimir y Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="ubigeo.js"></script>
+    <script src="api-client.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
