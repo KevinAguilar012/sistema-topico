@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
+agy
     <!-- PANTALLA DE ACCESO (LOGIN) -->
     <div id="loginView" class="login-card">
         <div class="login-header">
@@ -522,90 +522,43 @@
                             <h3 class="sub-title-ficha">VIGILANCIA DE EDA (CIE 10: A00-A09) - FICHA CLÍNICA</h3>
 
                             <fieldset class="form-section">
-                                <legend>I. Datos Generales</legend>
+                                <legend>1. Datos de Identificación</legend>
                                 <div class="form-grid-3">
                                     <div class="input-group">
-                                        <label for="edaFechaNotif">Fecha de Notificación:</label>
-                                        <input type="date" id="edaFechaNotif">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="edaFechaInvest">Fecha de Investigación:</label>
-                                        <input type="date" id="edaFechaInvest">
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Establecimiento Notificante:</label>
+                                        <label>Establecimiento de Salud:</label>
                                         <input type="text" value="IESTP CARHUAZ - TÓPICO" readonly style="background: #edf2f7;">
                                     </div>
-                                </div>
-                                <div class="form-grid-2" style="margin-top: 10px;">
                                     <div class="input-group">
-                                        <label for="edaCaptacion">Captación del Caso:</label>
-                                        <select id="edaCaptacion">
-                                            <option value="Pasiva">Pasiva</option>
-                                            <option value="Activa">Activa</option>
-                                            <option value="Vigilancia comunal">Vigilancia comunal</option>
-                                            <option value="Seguimiento de contactos">Seguimiento de contactos</option>
-                                        </select>
+                                        <label for="edaFechaHora">Fecha y Hora de Atención:</label>
+                                        <input type="datetime-local" id="edaFechaHora">
                                     </div>
                                     <div class="input-group">
-                                        <label for="edaRenaes">Código RENAES:</label>
-                                        <input type="text" id="edaRenaes" placeholder="Ej. 00001234">
+                                        <label for="edaDni">N.° de Historia Clínica / DNI:</label>
+                                        <input type="text" id="edaDni" readonly style="background: #edf2f7;">
                                     </div>
                                 </div>
-                            </fieldset>
-
-                            <fieldset class="form-section">
-                                <legend>II. Datos del Paciente y Ubicación</legend>
                                 <div class="form-grid-3">
                                     <div class="input-group">
-                                        <label>Nombres y Apellidos:</label>
+                                        <label for="edaNombreCompleto">Nombres y Apellidos:</label>
                                         <input type="text" id="edaNombreCompleto" readonly style="background: #edf2f7;">
                                     </div>
                                     <div class="input-group">
-                                        <label>DNI / N.° Historia Clínica:</label>
-                                        <input type="text" id="edaDni" readonly style="background: #edf2f7;">
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Edad / Género:</label>
+                                        <label for="edaEdadSexo">Edad / Género:</label>
                                         <input type="text" id="edaEdadSexo" readonly style="background: #edf2f7;">
                                     </div>
-                                </div>
-
-                                <div class="form-grid-2" style="margin-top: 10px;">
                                     <div class="input-group">
-                                        <label for="edaApoderado">Si es menor de edad, Nombre del Padre/Madre/Apoderado:</label>
-                                        <input type="text" id="edaApoderado" placeholder="Nombre completo del responsable">
-                                    </div>
-                                    <div class="form-grid-2">
-                                        <div class="input-group">
-                                            <label for="edaVinculo">Vínculo:</label>
-                                            <input type="text" id="edaVinculo" placeholder="Padre/Madre/Tutor">
-                                        </div>
-                                        <div class="input-group">
-                                            <label for="edaOcupacionApoderado">Ocupación:</label>
-                                            <input type="text" id="edaOcupacionApoderado">
-                                        </div>
+                                        <label for="edaDireccion">Dirección:</label>
+                                        <input type="text" id="edaDireccion" readonly style="background: #edf2f7;">
                                     </div>
                                 </div>
-
-                                <div class="form-grid-3" style="margin-top: 10px;">
-                                    <div class="input-group">
-                                        <label for="edaUbicacionDep">Departamento / Provincia / Distrito:</label>
-                                        <input type="text" id="edaUbicacionDep" value="Ancash / Carhuaz / Carhuaz">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="edaDomicilio">Domicilio Actual (Dirección / Vía):</label>
-                                        <input type="text" id="edaDomicilio" placeholder="Av., Jr., Calle y N°">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="edaReferencia">Referencia de Domicilio:</label>
-                                        <input type="text" id="edaReferencia" placeholder="Ej. Frente al parque central">
-                                    </div>
+                                <div class="input-group" style="margin-top: 10px;">
+                                    <label for="edaAcompanante">Acompañante / Responsable:</label>
+                                    <input type="text" id="edaAcompanante" placeholder="Nombre y contacto del responsable">
                                 </div>
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>III. Datos Clínicos y Evaluación EDA</legend>
+                                <legend>2. Datos Clínicos y Evaluación EDA</legend>
                                 <div class="form-grid-3">
                                     <div class="input-group">
                                         <label for="edaFechaSintomas">Fecha Inicio de Síntomas:</label>
@@ -685,7 +638,7 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>IV. Muestra de Laboratorio (Si Aplica)</legend>
+                                <legend>3. Muestra de Laboratorio (Si Aplica)</legend>
                                 <div class="form-grid-3">
                                     <div class="input-group">
                                         <label for="edaTipoMuestra">Tipo de Muestra:</label>
@@ -707,7 +660,7 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>V. Persona que Investiga y Atiende el Caso</legend>
+                                <legend>4. Persona que Investiga y Atiende el Caso</legend>
                                 <div class="form-grid-2">
                                     <div class="input-group">
                                         <label for="edaInvestigadorNombre">Nombre del Personal de Salud:</label>

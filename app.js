@@ -161,8 +161,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const f1FechaHoraReg = document.getElementById('f1FechaHoraReg');
     if (f1FechaHoraReg) f1FechaHoraReg.value = fechaHoraLocal;
 
-    const edaFechaNotif = document.getElementById('edaFechaNotif');
-    if (edaFechaNotif) edaFechaNotif.value = hoyFecha;
+    const edaFechaHora = document.getElementById('edaFechaHora');
+    if (edaFechaHora) edaFechaHora.value = fechaHoraLocal;
 
     // Verificar conexión a la Base de Datos
     if (typeof API !== 'undefined') {
@@ -593,8 +593,8 @@ async function buscarPacienteF2() {
         if (document.getElementById('edaDni')) document.getElementById('edaDni').value = paciente.dni;
         if (document.getElementById('edaNombreCompleto')) document.getElementById('edaNombreCompleto').value = nombreCompleto;
         if (document.getElementById('edaEdadSexo')) document.getElementById('edaEdadSexo').value = generoEdad;
-        if (document.getElementById('edaDomicilio')) document.getElementById('edaDomicilio').value = paciente.domicilio || 'Carhuaz';
-        if (document.getElementById('edaApoderado')) document.getElementById('edaApoderado').value = apoderadoNom;
+        if (document.getElementById('edaDireccion')) document.getElementById('edaDireccion').value = paciente.domicilio || 'Carhuaz';
+        if (document.getElementById('edaAcompanante')) document.getElementById('edaAcompanante').value = apoderadoNom;
 
         if (infoCard) infoCard.classList.remove('hidden');
         alert(`✅ Paciente cargado: ${nombreCompleto}`);
