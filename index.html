@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-agy
     <!-- PANTALLA DE ACCESO (LOGIN) -->
     <div id="loginView" class="login-card">
         <div class="login-header">
@@ -157,7 +156,7 @@ agy
                             <div class="form-grid-2">
                                 <div class="input-group">
                                     <label for="f1Programa">Programa de Estudios / Condición:</label>
-                                    <select id="f1Programa" required>
+                                    <select id="f1Programa" required onchange="toggleApoderadoF1()">
                                         <option value="Enfermería Técnica">Enfermería Técnica</option>
                                         <option value="Arquitectura de Plataformas y Servicios de Tecnologías de la Información">Arquitectura de Plataformas y Servicios de TI</option>
                                         <option value="Otros (Docentes, Administrativos y Externos)">Otros (Docentes, Administrativos y Externos)</option>
@@ -205,8 +204,8 @@ agy
                             </div>
                         </fieldset>
 
-                        <!-- III. DATOS DEL APODERADO O CONTACTO DE EMERGENCIA (OBLIGATORIO Y GENERAL) -->
-                        <fieldset class="form-section highlight-box">
+                        <!-- III. DATOS DEL APODERADO O CONTACTO DE EMERGENCIA (PARA ESTUDIANTES) -->
+                        <fieldset id="secF1Apoderado" class="form-section highlight-box">
                             <legend>III. Datos del Apoderado / Familiar / Contacto de Emergencia</legend>
                             <div class="form-grid-3">
                                 <div class="input-group">
@@ -299,7 +298,6 @@ agy
                                     <option value="">-- Seleccione Tipo de Ficha --</option>
                                     <option value="IRA">FICHA DE ATENCIÓN – INFECCIONES RESPIRATORIAS AGUDAS (IRA)</option>
                                     <option value="EDA">FICHA DE ATENCIÓN – ENFERMEDADES DIARREICAS AGUDAS (EDA)</option>
-                                    <option value="GENERAL">Atención General / Otros</option>
                                 </select>
                             </div>
                         </fieldset>
@@ -554,117 +552,224 @@ agy
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>2. Datos Clínicos y Evaluación EDA</legend>
-                                <div class="form-grid-3">
+                                <legend>2. Motivo de Consulta y Anamnesis (Síntomas)</legend>
+                                <div class="checkbox-group-grid">
+                                    <label><input type="checkbox" id="edaSintDiarrea"> Diarrea</label>
+                                    <label><input type="checkbox" id="edaSintVomitos"> Vómitos</label>
+                                    <label><input type="checkbox" id="edaSintFiebre"> Fiebre</label>
+                                    <label><input type="checkbox" id="edaSintDolorAbdominal"> Dolor abdominal</label>
+                                    <label><input type="checkbox" id="edaSintRechazoAlimentos"> Rechazo de alimentos</label>
+                                </div>
+
+                                <div class="form-grid-3" style="margin-top: 10px;">
                                     <div class="input-group">
-                                        <label for="edaFechaSintomas">Fecha Inicio de Síntomas:</label>
-                                        <input type="date" id="edaFechaSintomas">
+                                        <label for="edaTiempoEnf">Tiempo de enfermedad (días/horas):</label>
+                                        <input type="text" id="edaTiempoEnf" placeholder="Ej. 2 días / 12 horas">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaNumDeposiciones">Número de deposiciones:</label>
+                                        <input type="text" id="edaNumDeposiciones" placeholder="Ej. 5 por día">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaHabitoHigiene">Hábito de higiene:</label>
+                                        <input type="text" id="edaHabitoHigiene" placeholder="Ej. Lavado de manos, consumo de agua hervida...">
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-2" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="edaCaracDeposiciones">Características de las deposiciones:</label>
+                                        <input type="text" id="edaCaracDeposiciones" placeholder="Ej. Líquidas, con moco, amarillentas...">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaAntecedentes">Antecedentes Relevantes:</label>
+                                        <input type="text" id="edaAntecedentes" placeholder="Ej. Alergias, comorbilidades...">
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>3. Evaluación Clínica</legend>
+
+                                <div class="form-grid-2">
+                                    <div class="input-group">
+                                        <label for="edaTemp">Temperatura (°C):</label>
+                                        <input type="number" step="0.1" id="edaTemp" placeholder="Ej. 37.0">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaFc">Frecuencia Cardíaca (ppm):</label>
+                                        <input type="number" id="edaFc" placeholder="Ej. 75">
+                                    </div>
+                                </div>
+                                <div class="form-grid-2" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="edaFr">Frecuencia Respiratoria (rpm):</label>
+                                        <input type="number" id="edaFr" placeholder="Ej. 18">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaPeso">Peso (kg):</label>
+                                        <input type="number" step="0.1" id="edaPeso" placeholder="Ej. 60.0">
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-2" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="edaCapacidadBeber">Capacidad para beber:</label>
+                                        <select id="edaCapacidadBeber">
+                                            <option value="">-- Seleccione capacidad para beber... --</option>
+                                            <option value="Normal">Normal</option>
+                                            <option value="Con avidez / Sediento">Con avidez / Sediento</option>
+                                            <option value="No puede beber / Con dificultad">No puede beber / Con dificultad</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaEstadoOjos">Ojos:</label>
+                                        <select id="edaEstadoOjos">
+                                            <option value="">-- Seleccione estado de los ojos... --</option>
+                                            <option value="Normales">Normales</option>
+                                            <option value="Hundidos">Hundidos</option>
+                                            <option value="Muy hundidos">Muy hundidos</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-2" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="edaEstadoMucosas">Mucosas:</label>
+                                        <select id="edaEstadoMucosas">
+                                            <option value="">-- Seleccione estado de mucosas... --</option>
+                                            <option value="Húmedas / Normales">Húmedas / Normales</option>
+                                            <option value="Pastosas / Semisecas">Pastosas / Semisecas</option>
+                                            <option value="Secas / Sin saliva">Secas / Sin saliva</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaEstadoPliegue">Pliegue cutáneo:</label>
+                                        <select id="edaEstadoPliegue">
+                                            <option value="">-- Seleccione estado del pliegue... --</option>
+                                            <option value="Desaparece de inmediato">Desaparece de inmediato</option>
+                                            <option value="Desaparece lentamente">Desaparece lentamente</option>
+                                            <option value="Desaparece muy lentamente">Desaparece muy lentamente</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-2" style="margin-top: 10px;">
+                                    <div class="input-group">
+                                        <label for="edaMurmullosVesic">Murmullos vesiculares:</label>
+                                        <select id="edaMurmullosVesic">
+                                            <option value="">-- Seleccione auscultación... --</option>
+                                            <option value="Conservados">Conservados</option>
+                                            <option value="Disminuidos">Disminuidos</option>
+                                            <option value="Abolidos">Abolidos</option>
+                                            <option value="Agregados">Agregados</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaNivelConciencia">Nivel de conciencia:</label>
+                                        <select id="edaNivelConciencia">
+                                            <option value="">-- Seleccione nivel de conciencia --</option>
+                                            <option value="Alerta">Alerta</option>
+                                            <option value="Somnoliento">Somnoliento</option>
+                                            <option value="Estuporoso">Estuporoso</option>
+                                            <option value="Comatoso">Comatoso</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="input-group" style="margin-top: 10px;">
+                                    <label for="edaOtrosSignosAlarma">Otros signos de alarma:</label>
+                                    <input type="text" id="edaOtrosSignosAlarma" placeholder="Ej. Irritabilidad, cianosis, llenado capilar lento...">
+                                </div>
+                            </fieldset>
+
+                            <!-- 4. CLASIFICACIÓN / DIAGNÓSTICO -->
+                            <fieldset class="form-section">
+                                <legend>4. Clasificación / Diagnóstico</legend>
+
+                                <div class="form-grid-2">
+                                    <div class="input-group">
+                                        <label for="edaEstadoHidratacion">Estado de Hidratación:</label>
+                                        <select id="edaEstadoHidratacion" onchange="evaluarReglasEDA()">
+                                            <option value="">-- Seleccione Estado de Hidratación --</option>
+                                            <option value="Sin deshidratación clínica">Sin deshidratación clínica</option>
+                                            <option value="Deshidratación moderada">Deshidratación moderada</option>
+                                            <option value="Deshidratación grave / Shock hipovolémico">Deshidratación grave / Shock hipovolémico</option>
+                                        </select>
                                     </div>
                                     <div class="input-group">
                                         <label for="edaTipoDiarrea">Tipo de Diarrea:</label>
-                                        <select id="edaTipoDiarrea">
-                                            <option value="">Seleccione tipo...</option>
-                                            <option value="EDA acuosa">EDA acuosa</option>
-                                            <option value="EDA disentérica">EDA disentérica</option>
-                                            <option value="EDA persistente">EDA persistente</option>
+                                        <select id="edaTipoDiarrea" onchange="evaluarReglasEDA()">
+                                            <option value="">-- Seleccione Tipo de Diarrea --</option>
+                                            <option value="Diarrea aguda">Diarrea aguda</option>
+                                            <option value="Diarrea persistente">Diarrea persistente</option>
+                                            <option value="Diarrea crónica">Diarrea crónica</option>
+                                            <option value="Síndrome disentérico">Síndrome disentérico</option>
                                         </select>
                                     </div>
-                                    <div class="input-group">
-                                        <label for="edaNumDeposiciones">N.° Deposiciones por día:</label>
-                                        <input type="number" id="edaNumDeposiciones" min="1" placeholder="Ej. 5">
-                                    </div>
                                 </div>
 
-                                <div style="margin-top: 15px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                                    <h4 style="color: #2c5282; margin-bottom: 8px;">Tratamiento y Plan de Deshidratación:</h4>
-                                    <div class="form-grid-3">
-                                        <div class="input-group">
-                                            <label for="edaPlanTratamiento">Plan de Tratamiento:</label>
-                                            <select id="edaPlanTratamiento">
-                                                <option value="Plan A">Plan A (Casa / Reposición SRO)</option>
-                                                <option value="Plan B">Plan B (Tópico / SRO 4 horas)</option>
-                                                <option value="Plan C">Plan C (Urgencia / Vía EV)</option>
-                                            </select>
-                                        </div>
-                                        <div class="input-group">
-                                            <label for="edaTratAntibiotico">Tratamiento Antibiótico:</label>
-                                            <select id="edaTratAntibiotico">
-                                                <option value="No">No</option>
-                                                <option value="Si">Sí</option>
-                                            </select>
-                                        </div>
-                                        <div class="input-group">
-                                            <label for="edaAntibioticoUsado">Antibiótico Prescrito:</label>
-                                            <select id="edaAntibioticoUsado">
-                                                <option value="Ninguno">Ninguno</option>
-                                                <option value="Ciprofloxacina">Ciprofloxacina</option>
-                                                <option value="Cotrimoxazol">Cotrimoxazol</option>
-                                                <option value="Doxiciclina">Doxiciclina</option>
-                                                <option value="Tetraciclina">Tetraciclina</option>
-                                                <option value="Cloramfenicol">Cloramfenicol</option>
-                                                <option value="Otros">Otros</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div style="margin-top: 15px;">
-                                    <h4 style="color: #2c5282; margin-bottom: 8px;">Evolución del Paciente:</h4>
-                                    <div class="form-grid-3">
-                                        <div class="input-group">
-                                            <label for="edaEvolAmbulatorio">Ambulatorio:</label>
-                                            <select id="edaEvolAmbulatorio">
-                                                <option value="Si">Sí</option>
-                                                <option value="No">No</option>
-                                            </select>
-                                        </div>
-                                        <div class="input-group">
-                                            <label for="edaHospitalizado">Hospitalizado / Derivado:</label>
-                                            <select id="edaHospitalizado">
-                                                <option value="No">No</option>
-                                                <option value="Si">Sí</option>
-                                            </select>
-                                        </div>
-                                        <div class="input-group">
-                                            <label for="edaFechaHospitalizado">Fecha de Traslado / Referencia:</label>
-                                            <input type="date" id="edaFechaHospitalizado">
-                                        </div>
-                                    </div>
+                                <div id="alertaDisenteria" class="hidden" style="margin-top: 10px; padding: 8px 12px; background-color: #fff5f5; border: 1px solid #feb2b2; border-radius: 6px; color: #c53030; font-size: 12px; font-weight: 600;">
+                                    ⚠️ Considere antibioticoterapia empírica (Shigella / Campylobacter) y evite loperamida si hay sospecha de disentería.
                                 </div>
                             </fieldset>
 
+                            <!-- 5. CONDUCTA Y TRATAMIENTO -->
                             <fieldset class="form-section">
-                                <legend>3. Muestra de Laboratorio (Si Aplica)</legend>
-                                <div class="form-grid-3">
-                                    <div class="input-group">
-                                        <label for="edaTipoMuestra">Tipo de Muestra:</label>
-                                        <select id="edaTipoMuestra">
-                                            <option value="Ninguna">Ninguna</option>
-                                            <option value="Heces">Heces</option>
-                                            <option value="Hisopado rectal">Hisopado rectal</option>
-                                        </select>
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="edaFechaTomaMuestra">Fecha de Toma de Muestra:</label>
-                                        <input type="date" id="edaFechaTomaMuestra">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="edaMicroorganismo">Microorganismo Aislado / Resultado:</label>
-                                        <input type="text" id="edaMicroorganismo" placeholder="Ej. Shigella, Salmonella, Vibrio...">
-                                    </div>
-                                </div>
-                            </fieldset>
+                                <legend>5. Conducta y Tratamiento</legend>
 
-                            <fieldset class="form-section">
-                                <legend>4. Persona que Investiga y Atiende el Caso</legend>
                                 <div class="form-grid-2">
                                     <div class="input-group">
-                                        <label for="edaInvestigadorNombre">Nombre del Personal de Salud:</label>
-                                        <input type="text" id="edaInvestigadorNombre" placeholder="Lic. en Enfermería responsable">
+                                        <label for="edaManejoFluidos">Manejo de Fluidos:</label>
+                                        <select id="edaManejoFluidos" onchange="evaluarReglasEDA()">
+                                            <option value="">-- Seleccione Manejo de Fluidos --</option>
+                                            <option value="Plan A - Hidratación vía oral (Ambulatorio)">Plan A - Hidratación vía oral (Ambulatorio)</option>
+                                            <option value="Plan B - Hidratación vía oral supervisada (SRO en centro de salud)">Plan B - Hidratación vía oral supervisada (SRO en centro de salud)</option>
+                                            <option value="Plan C - Hidratación intravenosa (Emergencia/Observación)">Plan C - Hidratación intravenosa (Emergencia/Observación)</option>
+                                        </select>
                                     </div>
                                     <div class="input-group">
-                                        <label for="edaInvestigadorCargo">Cargo / Firma y Sello:</label>
-                                        <input type="text" id="edaInvestigadorCargo" readonly value="Lic. Enfermería - Tópico IESTP Carhuaz" style="background: #edf2f7;">
+                                        <label for="edaTratFarmacologico">Tratamiento Farmacológico:</label>
+                                        <select id="edaTratFarmacologico">
+                                            <option value="Ninguno">Ninguno / Solo SRO</option>
+                                            <option value="Antibioticoterapia empírica">Antibioticoterapia empírica</option>
+                                            <option value="Sintomáticos (Antieméticos/Antiespasmódicos)">Sintomáticos (Antieméticos / Antiespasmódicos)</option>
+                                            <option value="Antibioticoterapia + Sintomáticos">Antibioticoterapia + Sintomáticos</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <!-- 6. CONSEJERÍA Y SIGNOS DE ALARMA -->
+                            <fieldset id="secEdaConsejeria" class="form-section">
+                                <legend>6. Consejería y Signos de Alarma</legend>
+
+                                <div class="form-grid-2">
+                                    <div style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                        <label style="font-size: 12px; font-weight: bold; color: #2b6cb0; display: block; margin-bottom: 6px;">Pautas de Prevención e Higiene:</label>
+                                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                                            <label style="font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: flex-start; gap: 6px;">
+                                                <input type="checkbox" id="edaPrevManos" style="margin-top: 2px;"> <strong>Higiene de manos:</strong> Lavado correcto con agua y jabón antes de comer, cocinar y después del baño.
+                                            </label>
+                                            <label style="font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: flex-start; gap: 6px;">
+                                                <input type="checkbox" id="edaPrevAgua" style="margin-top: 2px;"> <strong>Consumo de agua segura:</strong> Agua hervida, clorada o embotellada para beber y lavar utensilios.
+                                            </label>
+                                            <label style="font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: flex-start; gap: 6px;">
+                                                <input type="checkbox" id="edaPrevAlimentos" style="margin-top: 2px;"> <strong>Manipulación de alimentos:</strong> Lavar frutas/verduras, cocinar bien carnes y mantener alimentos tapados.
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                        <label style="font-size: 12px; font-weight: bold; color: #c53030; display: block; margin-bottom: 6px;">Educación sobre Signos de Alarma:</label>
+                                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                                            <label style="font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: flex-start; gap: 6px;">
+                                                <input type="checkbox" id="edaAlarmaPersistencia" style="margin-top: 2px;"> <strong>Persistencia / Empeoramiento:</strong> Regresar si la diarrea dura más de 2 días o aumentan las deposiciones.
+                                            </label>
+                                            <label style="font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: flex-start; gap: 6px;">
+                                                <input type="checkbox" id="edaAlarmaSangrado" style="margin-top: 2px;"> <strong>Deshidratación / Sangrado:</strong> Regresar si hay sed intensa, incapacidad para ingerir líquidos, ojos hundidos, fiebre o sangre.
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </fieldset>

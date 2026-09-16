@@ -150,6 +150,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         inicializarUbigeo();
     }
     
+    // Toggle visibilidad del apoderado según programa
+    toggleApoderadoF1();
+
     // Autoasignar fecha y hora actual en los formularios
     const ahora = new Date();
     const offset = ahora.getTimezoneOffset() * 60000;
@@ -268,12 +271,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 domicilio: document.getElementById('f1Domicilio').value.trim(),
                 referencia: document.getElementById('f1Referencia').value.trim(),
                 apoderado: {
-                    dni: document.getElementById('f1ApoDni').value.trim(),
-                    nombres: document.getElementById('f1ApoNombres').value.trim(),
-                    vinculo: document.getElementById('f1ApoVinculo').value,
-                    telefono: document.getElementById('f1ApoTelefono').value.trim(),
-                    ocupacion: document.getElementById('f1ApoOcupacion').value.trim(),
-                    domicilio: document.getElementById('f1ApoDomicilio').value.trim()
+                    dni: document.getElementById('f1ApoDni')?.value.trim() || '',
+                    nombres: document.getElementById('f1ApoNombres')?.value.trim() || '',
+                    vinculo: document.getElementById('f1ApoVinculo')?.value || '',
+                    telefono: document.getElementById('f1ApoTelefono')?.value.trim() || '',
+                    ocupacion: document.getElementById('f1ApoOcupacion')?.value.trim() || '',
+                    domicilio: document.getElementById('f1ApoDomicilio')?.value.trim() || ''
                 }
             };
 
@@ -295,8 +298,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                                  (guardadoEnBD ? '\n(💾 Guardado en Base de Datos MySQL)' : '\n(📁 Guardado en Modo Local)');
             alert(mensajeExito);
             formF1.reset();
+            toggleApoderadoF1();
             
             if (f1FechaHoraReg) f1FechaHoraReg.value = new Date().toISOString().slice(0, 16);
+        });
+
+        formF1.addEventListener('reset', () => {
+            setTimeout(toggleApoderadoF1, 0);
         });
     }
 
@@ -331,10 +339,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 tratamiento = `${document.getElementById('iraMedicamento')?.value || ''} ${document.getElementById('iraDosis')?.value || ''}`.trim();
                 destino = document.getElementById('iraReferencia')?.value || 'Atención en Tópico';
             } else if (diagPrincipal === 'EDA') {
-                subtipo = document.getElementById('edaTipoDiarrea')?.value || 'EDA sin especificar';
-                tratamiento = document.getElementById('edaPlanTratamiento')?.value || 'Plan A';
-                const hospitalizado = document.getElementById('edaHospitalizado')?.value;
-                destino = hospitalizado === 'Si' ? 'Referido a Hospital' : 'Ambulatorio';
+                temp = document.getElementById('edaTemp')?.value || '36.5';
+                const estadoHid = document.getElementById('edaEstadoHidratacion')?.value || '';
+                const tipoDiarrea = document.getElementById('edaTipoDiarrea')?.value || '';
+                subtipo = [estadoHid, tipoDiarrea].filter(Boolean).join(' | ') || 'EDA Adultos';
+                
+                const manejoFluidos = document.getElementById('edaManejoFluidos')?.value || 'Hidratación vía oral';
+                const tratFarmac = document.getElementById('edaTratFarmacologico')?.value || 'Ninguno';
+                tratamiento = `${manejoFluidos} | ${tratFarmac}`;
+
+                destino = estadoHid.includes('grave') || manejoFluidos.includes('intravenosa') ? 'Referido URGENTE (IV)' : 'Ambulatorio';
             }
 
             const atencion = {
@@ -845,6 +859,87 @@ function calcularEdadF1(fechaNacimiento) {
 
     const inputEdad = document.getElementById('f1Edad');
     if (inputEdad) inputEdad.value = edad >= 0 ? edad : 0;
+}
+
+function toggleApoderadoF1() {
+    const prog = document.getElementById('f1Programa')?.value;
+    const secApo = document.getElementById('secF1Apoderado');
+    const apoDni = document.getElementById('f1ApoDni');
+    const apoNom = document.getElementById('f1ApoNombres');
+    const apoVin = document.getElementById('f1ApoVinculo');
+    const apoTel = document.getElementById('f1ApoTelefono');
+
+    const esEstudiante = prog === 'Enfermería Técnica' || prog === 'Arquitectura de Plataformas y Servicios de Tecnologías de la Información';
+
+    if (secApo) {
+        if (esEstudiante) {
+            secApo.classList.remove('hidden');
+            if (apoDni) apoDni.required = true;
+            if (apoNom) apoNom.required = true;
+            if (apoVin) apoVin.required = true;
+            if (apoTel) apoTel.required = true;
+        } else {
+            secApo.classList.add('hidden');
+            if (apoDni) apoDni.required = false;
+            if (apoNom) apoNom.required = false;
+            if (apoVin) apoVin.required = false;
+            if (apoTel) apoTel.required = false;
+        }
+    }
+}
+
+// ================================================================
+// 13. AUTOMATIZACIÓN Y REGLAS LÓGICAS PARA EDA
+// ================================================================
+function evaluarReglasEDA() {
+    const estadoHidratacion = document.getElementById('edaEstadoHidratacion')?.value;
+    const tipoDiarrea = document.getElementById('edaTipoDiarrea')?.value;
+
+    const manejoFluidos = document.getElementById('edaManejoFluidos');
+    const tratFarmacologico = document.getElementById('edaTratFarmacologico');
+    const alertaDisenteria = document.getElementById('alertaDisenteria');
+    const secConsejeria = document.getElementById('secEdaConsejeria');
+
+    // REGLA 1: Sin deshidratación clínica -> Plan A
+    if (estadoHidratacion === 'Sin deshidratación clínica') {
+        if (manejoFluidos) manejoFluidos.value = 'Plan A - Hidratación vía oral (Ambulatorio)';
+    } 
+    // REGLA 2: Deshidratación moderada -> Plan B
+    else if (estadoHidratacion === 'Deshidratación moderada') {
+        if (manejoFluidos) manejoFluidos.value = 'Plan B - Hidratación vía oral supervisada (SRO en centro de salud)';
+    } 
+    // REGLA 3: Deshidratación grave / Shock hipovolémico -> Plan C y alerta
+    else if (estadoHidratacion === 'Deshidratación grave / Shock hipovolémico') {
+        if (manejoFluidos) manejoFluidos.value = 'Plan C - Hidratación intravenosa (Emergencia/Observación)';
+        alert("🚨 ¡ALERTA CRÍTICA: DESHIDRATACIÓN GRAVE / SHOCK HIPOVOLÉMICO!\nInicie de inmediato Hidratación Intravenosa de Emergencia (Plan C) y ordene transferencia / evaluación urgente.");
+    }
+
+    // REGLA DE CONSEJERÍA (PLAN A): Resaltar y activar el checklist de alta obligatoria
+    if (manejoFluidos && manejoFluidos.value.includes('Plan A')) {
+        if (secConsejeria) {
+            secConsejeria.style.border = '2px solid #3182ce';
+            secConsejeria.style.backgroundColor = '#ebf8ff';
+        }
+        ['edaPrevManos', 'edaPrevAgua', 'edaPrevAlimentos', 'edaAlarmaPersistencia', 'edaAlarmaSangrado'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.checked = true;
+        });
+    } else {
+        if (secConsejeria) {
+            secConsejeria.style.border = '1px solid #e2e8f0';
+            secConsejeria.style.backgroundColor = '#ffffff';
+        }
+    }
+
+    // REGLA 4: Síndrome disentérico -> Muestra alerta visual y sugiere antibioticoterapia
+    if (tipoDiarrea === 'Síndrome disentérico') {
+        if (alertaDisenteria) alertaDisenteria.classList.remove('hidden');
+        if (tratFarmacologico && tratFarmacologico.value === 'Ninguno') {
+            tratFarmacologico.value = 'Antibioticoterapia empírica';
+        }
+    } else {
+        if (alertaDisenteria) alertaDisenteria.classList.add('hidden');
+    }
 }
 
 function generarHistoriaF1(dni) {
