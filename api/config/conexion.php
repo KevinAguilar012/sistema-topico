@@ -8,7 +8,7 @@ class Conexion {
     // Parámetros de conexión por defecto para XAMPP
     private static $host = "localhost";
     private static $port = "3306";
-    private static $db   = "sistema_topico";
+    private static $db   = "sistema-topico";
     private static $user = "root";
     private static $pass = "";
 
