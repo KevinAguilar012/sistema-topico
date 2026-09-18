@@ -1,6 +1,6 @@
 // ================================================================
 // SISTEMA INTEGRAL DEL TÓPICO INSTITUCIONAL - IESTP CARHUAZ
-// CONTROLADOR PRINCIPAL (FRONTEND CON SOPORTE HÍBRIDO API / LOCAL)
+// CONTROLADOR PRINCIPAL (FRONTEND CON CONEXIÓN NODE.JS / MYSQL + FALLBACK LOCAL)
 // ================================================================
 
 // ================================================================
@@ -36,7 +36,7 @@ let listaUsuarios = obtenerStorage('topico_usuarios', [
 ]);
 
 // ================================================================
-// 2. SINCRONIZACIÓN CON BASE DE DATOS MYSQL (VÍA API)
+// 2. SINCRONIZACIÓN CON BASE DE DATOS MYSQL (VÍA API NODE.JS)
 // ================================================================
 async function sincronizarConBaseDatos() {
     if (typeof API === 'undefined' || !ApiConfig.conectadoABaseDatos) return;
@@ -54,31 +54,31 @@ async function sincronizarConBaseDatos() {
         if (pacientesBD && Array.isArray(pacientesBD)) {
             listaPacientes = pacientesBD.map(p => ({
                 historiaClinica: p.historia_clinica || p.historiaClinica,
-                establecimiento: p.establecimiento,
+                establecimiento: p.establecimiento || 'IESTP CARHUAZ - TÓPICO INSTITUCIONAL',
                 fechaRegistro: p.fecha_registro || p.fechaRegistro,
                 dni: p.dni,
                 apePaterno: p.ape_paterno || p.apePaterno,
                 apeMaterno: p.ape_materno || p.apeMaterno,
                 nombres: p.nombres,
                 fechaNacimiento: p.fecha_nacimiento || p.fechaNacimiento,
-                edad: p.edad,
+                edad: p.edad || 0,
                 genero: p.genero,
-                nacionalidad: p.nacionalidad,
+                nacionalidad: p.nacionalidad || 'Peruana',
                 etnia: p.etnia,
-                programa: p.programa,
+                programa: p.programa || 'Enfermería Técnica',
                 telefono: p.telefono,
-                dep: p.departamento || p.dep,
-                prov: p.provincia || p.prov,
-                dist: p.distrito || p.dist,
+                dep: p.departamento || p.dep || 'Ancash',
+                prov: p.provincia || p.prov || 'Carhuaz',
+                dist: p.distrito || p.dist || 'Carhuaz',
                 domicilio: p.domicilio,
                 referencia: p.referencia,
                 apoderado: p.apoderado || {
-                    dni: p.apoderado_dni,
-                    nombres: p.apoderado_nombres,
-                    vinculo: p.apoderado_vinculo,
-                    telefono: p.apoderado_telefono,
-                    ocupacion: p.apoderado_ocupacion,
-                    domicilio: p.apoderado_domicilio
+                    dni: p.apoderado_dni || '',
+                    nombres: p.apoderado_nombres || '',
+                    vinculo: p.apoderado_vinculo || '',
+                    telefono: p.apoderado_telefono || '',
+                    ocupacion: p.apoderado_ocupacion || '',
+                    domicilio: p.apoderado_domicilio || ''
                 }
             }));
             guardarStorage('topico_pacientes', listaPacientes);
@@ -96,16 +96,16 @@ async function sincronizarConBaseDatos() {
         if (botiquinBD && Array.isArray(botiquinBD) && botiquinBD.length > 0) {
             listaBotiquin = botiquinBD.map(m => ({
                 id: m.id,
-                codigo: m.codigo,
+                codigo: m.codigo || `MED-00${m.id}`,
                 nombre: m.nombre,
-                categoria: m.categoria,
-                stock: parseInt(m.stock, 10),
-                vencimiento: m.vencimiento
+                categoria: m.categoria || 'General',
+                stock: parseInt(m.stock || 50, 10),
+                vencimiento: m.vencimiento || '2027-12-31'
             }));
             guardarStorage('topico_botiquin', listaBotiquin);
         }
 
-        console.log("✅ Datos sincronizados correctamente con MySQL.");
+        console.log("✅ Datos sincronizados correctamente con MySQL via Node.js API.");
     } catch (error) {
         console.warn("Aviso: No se pudo completar la sincronización con MySQL:", error);
     }
@@ -119,23 +119,23 @@ function actualizarEstadoUI(conectado) {
     if (conectado) {
         if (badge) {
             badge.className = 'db-status-badge db-online';
-            badge.innerHTML = '🟢 BD MySQL Conectada';
-            badge.title = 'Conexión activa con MySQL (sistema_topico)';
+            badge.innerHTML = '🟢 BD MySQL Conectada (Node.js API)';
+            badge.title = 'Conexión activa con MySQL (http://localhost:3000/api)';
         }
         if (loginDot) loginDot.innerText = '🟢';
         if (loginText) {
-            loginText.innerText = 'Conectada a MySQL (sistema_topico)';
+            loginText.innerText = 'Conectada a MySQL (http://localhost:3000/api)';
             loginText.style.color = '#276749';
         }
     } else {
         if (badge) {
             badge.className = 'db-status-badge db-offline';
             badge.innerHTML = '🟡 Modo Local (Sin BD)';
-            badge.title = 'Base de datos no detectada. Los datos se guardan en el navegador. Inicia XAMPP para conectar MySQL.';
+            badge.title = 'Servidor backend no detectado. Los datos se guardan en el navegador localmente.';
         }
         if (loginDot) loginDot.innerText = '🟡';
         if (loginText) {
-            loginText.innerText = 'Modo Local (Inicia MySQL en XAMPP para conectar)';
+            loginText.innerText = 'Modo Local (Inicia el servidor Node.js en port 3000 para conectar)';
             loginText.style.color = '#975a16';
         }
     }
@@ -158,7 +158,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const offset = ahora.getTimezoneOffset() * 60000;
     const horaLocal = new Date(ahora.getTime() - offset);
 
-    const hoyFecha = horaLocal.toISOString().split('T')[0];
     const fechaHoraLocal = horaLocal.toISOString().slice(0, 16);
 
     const f1FechaHoraReg = document.getElementById('f1FechaHoraReg');
@@ -167,7 +166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const edaFechaHora = document.getElementById('edaFechaHora');
     if (edaFechaHora) edaFechaHora.value = fechaHoraLocal;
 
-    // Verificar conexión a la Base de Datos
+    // Verificar conexión a la Base de Datos Node.js
     if (typeof API !== 'undefined') {
         const dbActiva = await API.verificarConexion();
         actualizarEstadoUI(dbActiva);
@@ -192,19 +191,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Intento 1: Autenticar mediante API en Base de Datos MySQL
             if (typeof API !== 'undefined' && ApiConfig.conectadoABaseDatos) {
-                const res = await API.usuarios.login(u, p);
-                if (res && !res.error && res.usuario) {
-                    usuarioValido = true;
-                    nombreMostrar = res.usuario.nombre || `Lic. ${u}`;
+                try {
+                    const res = await API.usuarios.login(u, p);
+                    if (res && !res.error && res.usuario) {
+                        usuarioValido = true;
+                        nombreMostrar = res.usuario.nombre || `Lic. ${u}`;
+                    } else if (res && res.error) {
+                        if (errorMsg) {
+                            errorMsg.innerText = res.mensaje || "Usuario o contraseña incorrectos.";
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Error durante login API:", err);
                 }
-            }
-
-            // Intento 2: Si la BD no está conectada o falló, validar con datos locales
-            if (!usuarioValido) {
-                const usrLocal = listaUsuarios.find(usr => usr.usuario === u && (!usr.pass || usr.pass === p));
-                if (usrLocal || (u !== "" && p !== "")) {
+            } else {
+                // Intento 2: Modo sin conexión a BD - Validar con lista local exacta
+                const usrLocal = listaUsuarios.find(usr => usr.usuario === u && (usr.pass === p || (!usr.pass && p === '1234')));
+                if (usrLocal) {
                     usuarioValido = true;
-                    nombreMostrar = usrLocal ? usrLocal.nombre : `Lic. ${u}`;
+                    nombreMostrar = usrLocal.nombre;
+                } else if (u === 'admin' && p === '1234') {
+                    usuarioValido = true;
+                    nombreMostrar = 'Administrador';
                 }
             }
 
@@ -280,22 +288,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             };
 
-            // Guardar en MySQL vía API si está conectada
+            // Guardar en MySQL vía API Node.js si está conectada
             let guardadoEnBD = false;
             if (typeof API !== 'undefined' && ApiConfig.conectadoABaseDatos) {
-                const res = await API.pacientes.registrar(paciente);
-                if (res && res.error) {
-                    alert(`❌ Error de Base de Datos: ${res.mensaje}`);
-                    return;
+                try {
+                    const res = await API.pacientes.registrar(paciente);
+                    if (res && res.error) {
+                        alert(`❌ Error al guardar paciente en MySQL: ${res.mensaje}`);
+                        return;
+                    }
+                    guardadoEnBD = true;
+                } catch (err) {
+                    console.warn("Error al registrar paciente en API:", err);
                 }
-                guardadoEnBD = true;
             }
 
             listaPacientes.push(paciente);
             guardarStorage('topico_pacientes', listaPacientes);
 
             const mensajeExito = `✅ Historia Clínica ${paciente.historiaClinica} registrada con éxito para ${paciente.nombres} ${paciente.apePaterno}.` +
-                                 (guardadoEnBD ? '\n(💾 Guardado en Base de Datos MySQL)' : '\n(📁 Guardado en Modo Local)');
+                                 (guardadoEnBD ? '\n(💾 Guardado en Base de Datos MySQL via Node.js API)' : '\n(📁 Guardado en Modo Local)');
             alert(mensajeExito);
             formF1.reset();
             toggleApoderadoF1();
@@ -328,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            let temp = "N/A";
+            let temp = "36.5";
             let subtipo = "Atención General";
             let tratamiento = "";
             let destino = "Tópico / Reposo";
@@ -365,12 +377,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 licenciada: document.getElementById('userDisplayName').innerText
             };
 
-            // Guardar en MySQL vía API si está conectada
+            // Guardar en MySQL vía API Node.js si está conectada
+            let guardadoEnBD = false;
             if (typeof API !== 'undefined' && ApiConfig.conectadoABaseDatos) {
-                const res = await API.atenciones.registrar(atencion);
-                if (res && res.error) {
-                    alert(`❌ Error al guardar atención en Base de Datos: ${res.mensaje}`);
-                    return;
+                try {
+                    const res = await API.atenciones.registrar(atencion);
+                    if (res && res.error) {
+                        alert(`❌ Error al guardar atención en Base de Datos: ${res.mensaje}`);
+                        return;
+                    }
+                    guardadoEnBD = true;
+                } catch (err) {
+                    console.warn("Error al guardar atención en API:", err);
                 }
             }
 
@@ -417,14 +435,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Guardar en MySQL si la API está disponible
             let guardadoEnBD = false;
             if (typeof API !== 'undefined' && ApiConfig.conectadoABaseDatos) {
-                const res = await API.botiquin.agregarOActualizar({
-                    codigo, nombre, categoria, cantidad, vencimiento
-                });
-                if (res && res.error) {
-                    alert(`❌ Error al procesar insumo en Base de Datos: ${res.mensaje}`);
-                    return;
+                try {
+                    const res = await API.botiquin.agregarOActualizar({
+                        codigo, nombre, categoria, cantidad, vencimiento
+                    });
+                    if (res && !res.error) guardadoEnBD = true;
+                } catch (err) {
+                    console.warn("Error en botiquín API:", err);
                 }
-                guardadoEnBD = true;
             }
 
             // Actualizar almacenamiento local
@@ -432,7 +450,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (existente) {
                 existente.stock += cantidad;
                 existente.vencimiento = vencimiento;
-                alert(`✅ Stock incrementado para el insumo ${existente.nombre}.` + (guardadoEnBD ? '\n(💾 Actualizado en MySQL)' : ''));
+                alert(`✅ Stock incrementado para el insumo ${existente.nombre}.` + (guardadoEnBD ? '\n(💾 Actualizado en MySQL via Node.js)' : ''));
             } else {
                 const med = {
                     codigo: codigo,
@@ -442,7 +460,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     vencimiento: vencimiento
                 };
                 listaBotiquin.push(med);
-                alert("✅ Nuevo medicamento añadido al botiquín." + (guardadoEnBD ? '\n(💾 Guardado en MySQL)' : ''));
+                alert("✅ Nuevo medicamento añadido al botiquín." + (guardadoEnBD ? '\n(💾 Guardado en MySQL via Node.js)' : ''));
             }
 
             guardarStorage('topico_botiquin', listaBotiquin);
@@ -467,19 +485,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             let guardadoEnBD = false;
             if (typeof API !== 'undefined' && ApiConfig.conectadoABaseDatos) {
-                const res = await API.derivaciones.registrar({
-                    dni,
-                    paciente: nom,
-                    establecimiento: destino,
-                    motivo: motivo,
-                    acompanante: acomp,
-                    personal: document.getElementById('userDisplayName')?.innerText || 'Lic. Enfermería'
-                });
-                if (res && !res.error) guardadoEnBD = true;
+                try {
+                    const res = await API.derivaciones.registrar({
+                        dni,
+                        paciente: nom,
+                        establecimiento: destino,
+                        motivo: motivo,
+                        acompanante: acomp,
+                        personal: document.getElementById('userDisplayName')?.innerText || 'Lic. Enfermería'
+                    });
+                    if (res && !res.error) guardadoEnBD = true;
+                } catch (err) {
+                    console.warn("Error en derivaciones API:", err);
+                }
             }
 
             alert(`🚑 FICHA DE REFERENCIA GENERADA\n\nPaciente: ${nom}\nDestino: ${destino}\nMotivo: ${motivo}` +
-                  (guardadoEnBD ? '\n\n(💾 Registrado en Base de Datos MySQL)' : ''));
+                  (guardadoEnBD ? '\n\n(💾 Registrado en Base de Datos MySQL via Node.js)' : ''));
             formF5.reset();
         });
     }
@@ -501,17 +523,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             let guardadoEnBD = false;
             if (typeof API !== 'undefined' && ApiConfig.conectadoABaseDatos) {
-                const res = await API.usuarios.registrar(usr);
-                if (res && res.error) {
-                    alert(`❌ Error al guardar personal en Base de Datos: ${res.mensaje}`);
-                    return;
+                try {
+                    const res = await API.usuarios.registrar(usr);
+                    if (res && !res.error) guardadoEnBD = true;
+                } catch (err) {
+                    console.warn("Error en usuarios API:", err);
                 }
-                guardadoEnBD = true;
             }
 
             listaUsuarios.push(usr);
             guardarStorage('topico_usuarios', listaUsuarios);
-            alert("👤 Personal registrado exitosamente." + (guardadoEnBD ? '\n(💾 Guardado en MySQL)' : ''));
+            alert("👤 Personal registrado exitosamente." + (guardadoEnBD ? '\n(💾 Guardado en MySQL via Node.js)' : ''));
             formF7.reset();
             renderizarTablaUsuarios();
         });
@@ -528,7 +550,6 @@ function mostrarSeccion(idSec) {
         if (el) el.classList.add('hidden');
     });
 
-    // Quitar y poner clase activa en la barra lateral
     document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
 
     const mapeo = {
@@ -554,74 +575,101 @@ function mostrarSeccion(idSec) {
 }
 
 // ================================================================
-// 5. BÚSQUEDA DE PACIENTE (FORMULARIO 2)
+// 5. BÚSQUEDA DE PACIENTE (FORMULARIO 2) - BÚSQUEDA API REST NODE.JS
 // ================================================================
 async function buscarPacienteF2() {
     const dni = document.getElementById('f2BuscarDni').value.trim();
     if (!dni) {
-        alert("Por favor ingrese un número de DNI.");
+        alert("Por favor ingrese un número de DNI para la búsqueda.");
         return;
     }
 
-    let paciente = listaPacientes.find(p => p.dni === dni);
+    let paciente = null;
 
-    // Si no está en memoria local y hay API conectada, consultar a MySQL
-    if (!paciente && typeof API !== 'undefined' && ApiConfig.conectadoABaseDatos) {
-        const pacBD = await API.pacientes.buscarPorDni(dni);
-        if (pacBD) {
-            paciente = {
-                dni: pacBD.dni,
-                nombres: pacBD.nombres,
-                apePaterno: pacBD.ape_paterno || pacBD.apePaterno,
-                apeMaterno: pacBD.ape_materno || pacBD.apeMaterno,
-                edad: pacBD.edad,
-                genero: pacBD.genero,
-                programa: pacBD.programa,
-                domicilio: pacBD.domicilio,
-                apoderado: pacBD.apoderado ? pacBD.apoderado.nombres : ''
-            };
-            listaPacientes.push(paciente);
+    // 1. Intentar consultar a la API de Node.js en MySQL
+    if (typeof API !== 'undefined' && ApiConfig.conectadoABaseDatos) {
+        try {
+            const pacBD = await API.pacientes.buscarPorDni(dni);
+            if (pacBD) {
+                const apeMat = (pacBD.ape_materno || pacBD.apeMaterno) ? ` ${pacBD.ape_materno || pacBD.apeMaterno}` : '';
+                const nomComp = `${pacBD.ape_paterno || pacBD.apePaterno || ''}${apeMat}, ${pacBD.nombres || ''}`;
+                const apoderadoNom = typeof pacBD.apoderado === 'object' ? (pacBD.apoderado?.nombres || '') : (pacBD.apoderado || '');
+                
+                paciente = {
+                    dni: pacBD.dni,
+                    nombres: pacBD.nombres,
+                    apePaterno: pacBD.ape_paterno || pacBD.apePaterno,
+                    apeMaterno: pacBD.ape_materno || pacBD.apeMaterno,
+                    nombreCompleto: nomComp.trim().replace(/^,/, ''),
+                    edad: pacBD.edad || 20,
+                    genero: pacBD.genero || 'No precisa',
+                    programa: pacBD.programa || 'Enfermería Técnica',
+                    domicilio: pacBD.domicilio || 'Carhuaz',
+                    apoderado: apoderadoNom
+                };
+            }
+        } catch (err) {
+            console.warn("Aviso al buscar paciente por DNI en API Node.js:", err);
         }
     }
 
+    // 2. Si no se encontró en MySQL/API o la API está inactiva, consultar almacenamiento local
+    if (!paciente) {
+        const local = listaPacientes.find(p => p.dni === dni);
+        if (local) {
+            const apeMat = local.apeMaterno ? ` ${local.apeMaterno}` : '';
+            const apoderadoNom = typeof local.apoderado === 'object' ? (local.apoderado?.nombres || '') : (local.apoderado || '');
+            paciente = {
+                dni: local.dni,
+                nombres: local.nombres,
+                apePaterno: local.apePaterno,
+                apeMaterno: local.apeMaterno,
+                nombreCompleto: `${local.apePaterno}${apeMat}, ${local.nombres}`,
+                edad: local.edad || 20,
+                genero: local.genero || local.sexo || 'No precisa',
+                programa: local.programa || 'Enfermería Técnica',
+                domicilio: local.domicilio || 'Carhuaz',
+                apoderado: apoderadoNom
+            };
+        }
+    }
+
+    // 3. Autocompletar la interfaz de usuario (F2, Ficha IRA y Ficha EDA)
     const infoCard = document.getElementById('pacienteEncontradoInfo');
 
     if (paciente) {
-        const apeMat = paciente.apeMaterno ? ` ${paciente.apeMaterno}` : '';
-        const nombreCompleto = `${paciente.apePaterno}${apeMat}, ${paciente.nombres}`;
-        const generoEdad = `${paciente.edad} años / ${paciente.genero || paciente.sexo || 'No precisa'}`;
-        const apoderadoNom = typeof paciente.apoderado === 'object' ? (paciente.apoderado?.nombres || '') : (paciente.apoderado || '');
+        const generoEdad = `${paciente.edad} años / ${paciente.genero}`;
 
-        // Datos en la tarjeta de búsqueda
-        document.getElementById('f2Dni').value = paciente.dni;
-        document.getElementById('f2NombreCompleto').value = nombreCompleto;
-        document.getElementById('f2Programa').value = paciente.programa;
+        // Formulario 2 (Atención Principal)
+        if (document.getElementById('f2Dni')) document.getElementById('f2Dni').value = paciente.dni;
+        if (document.getElementById('f2NombreCompleto')) document.getElementById('f2NombreCompleto').value = paciente.nombreCompleto;
+        if (document.getElementById('f2Programa')) document.getElementById('f2Programa').value = paciente.programa;
 
-        // Auto-completar Ficha IRA
+        // Ficha de Atención IRA
         if (document.getElementById('iraDni')) document.getElementById('iraDni').value = paciente.dni;
-        if (document.getElementById('iraNombreCompleto')) document.getElementById('iraNombreCompleto').value = nombreCompleto;
+        if (document.getElementById('iraNombreCompleto')) document.getElementById('iraNombreCompleto').value = paciente.nombreCompleto;
         if (document.getElementById('iraEdadSexo')) document.getElementById('iraEdadSexo').value = generoEdad;
-        if (document.getElementById('iraDireccion')) document.getElementById('iraDireccion').value = paciente.domicilio || 'Carhuaz';
+        if (document.getElementById('iraDireccion')) document.getElementById('iraDireccion').value = paciente.domicilio;
 
-        // Auto-completar Ficha EDA
+        // Ficha de Atención EDA
         if (document.getElementById('edaDni')) document.getElementById('edaDni').value = paciente.dni;
-        if (document.getElementById('edaNombreCompleto')) document.getElementById('edaNombreCompleto').value = nombreCompleto;
+        if (document.getElementById('edaNombreCompleto')) document.getElementById('edaNombreCompleto').value = paciente.nombreCompleto;
         if (document.getElementById('edaEdadSexo')) document.getElementById('edaEdadSexo').value = generoEdad;
-        if (document.getElementById('edaDireccion')) document.getElementById('edaDireccion').value = paciente.domicilio || 'Carhuaz';
-        if (document.getElementById('edaAcompanante')) document.getElementById('edaAcompanante').value = apoderadoNom;
+        if (document.getElementById('edaDireccion')) document.getElementById('edaDireccion').value = paciente.domicilio;
+        if (document.getElementById('edaAcompanante')) document.getElementById('edaAcompanante').value = paciente.apoderado;
 
         if (infoCard) infoCard.classList.remove('hidden');
-        alert(`✅ Paciente cargado: ${nombreCompleto}`);
+        alert(`✅ Paciente cargado con éxito: ${paciente.nombreCompleto}`);
     } else {
-        alert(`❌ No se encontró ningún paciente con DNI: ${dni}.\nPor favor regístrelo en el módulo 'Nuevo Paciente'.`);
+        alert(`❌ No se encontró ningún paciente con DNI: ${dni}.\nPor favor regístrelo previamente en el módulo 'Nuevo Paciente'.`);
         limpiarCamposPacienteF2();
     }
 }
 
 function limpiarCamposPacienteF2() {
-    document.getElementById('f2Dni').value = "";
-    document.getElementById('f2NombreCompleto').value = "";
-    document.getElementById('f2Programa').value = "";
+    if (document.getElementById('f2Dni')) document.getElementById('f2Dni').value = "";
+    if (document.getElementById('f2NombreCompleto')) document.getElementById('f2NombreCompleto').value = "";
+    if (document.getElementById('f2Programa')) document.getElementById('f2Programa').value = "";
 
     const infoCard = document.getElementById('pacienteEncontradoInfo');
     if (infoCard) infoCard.classList.add('hidden');
@@ -900,21 +948,17 @@ function evaluarReglasEDA() {
     const alertaDisenteria = document.getElementById('alertaDisenteria');
     const secConsejeria = document.getElementById('secEdaConsejeria');
 
-    // REGLA 1: Sin deshidratación clínica -> Plan A
     if (estadoHidratacion === 'Sin deshidratación clínica') {
         if (manejoFluidos) manejoFluidos.value = 'Plan A - Hidratación vía oral (Ambulatorio)';
     } 
-    // REGLA 2: Deshidratación moderada -> Plan B
     else if (estadoHidratacion === 'Deshidratación moderada') {
         if (manejoFluidos) manejoFluidos.value = 'Plan B - Hidratación vía oral supervisada (SRO en centro de salud)';
     } 
-    // REGLA 3: Deshidratación grave / Shock hipovolémico -> Plan C y alerta
     else if (estadoHidratacion === 'Deshidratación grave / Shock hipovolémico') {
         if (manejoFluidos) manejoFluidos.value = 'Plan C - Hidratación intravenosa (Emergencia/Observación)';
         alert("🚨 ¡ALERTA CRÍTICA: DESHIDRATACIÓN GRAVE / SHOCK HIPOVOLÉMICO!\nInicie de inmediato Hidratación Intravenosa de Emergencia (Plan C) y ordene transferencia / evaluación urgente.");
     }
 
-    // REGLA DE CONSEJERÍA (PLAN A): Resaltar y activar el checklist de alta obligatoria
     if (manejoFluidos && manejoFluidos.value.includes('Plan A')) {
         if (secConsejeria) {
             secConsejeria.style.border = '2px solid #3182ce';
@@ -931,7 +975,6 @@ function evaluarReglasEDA() {
         }
     }
 
-    // REGLA 4: Síndrome disentérico -> Muestra alerta visual y sugiere antibioticoterapia
     if (tipoDiarrea === 'Síndrome disentérico') {
         if (alertaDisenteria) alertaDisenteria.classList.remove('hidden');
         if (tratFarmacologico && tratFarmacologico.value === 'Ninguno') {

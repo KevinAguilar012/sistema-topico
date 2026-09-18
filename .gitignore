@@ -1,0 +1,12 @@
+# Dependencias
+api/node_modules/
+node_modules/
+
+# Archivos de configuración local y entornos
+.env
+.env.*
+
+# Sistemas operativos y editores
+.DS_Store
+Thumbs.db
+.vscode/
