@@ -1,7 +1,7 @@
 // ================================================================
 // SISTEMA INTEGRAL DEL TÓPICO - CLIENTE API (FRONTEND <-> BACKEND NODE.JS)
-// Conexión REST hacia el Servidor Node.js + Express en http://localhost:3000/api
-// con respaldo automático a LocalStorage si el servidor backend no responde.
+// Conexión REST exclusiva hacia el Servidor Node.js + Express + MySQL
+// en http://localhost:3000/api
 // ================================================================
 
 const ApiConfig = {
@@ -11,57 +11,35 @@ const ApiConfig = {
             return `${window.location.origin}/api`;
         }
         return 'http://localhost:3000/api';
-    },
-
-    conectadoABaseDatos: false
+    }
 };
 
 const API = {
-    /**
-     * Comprueba si el backend en Node.js y la base de datos MySQL están activos
-     */
-    async verificarConexion() {
-        try {
-            const baseUrl = ApiConfig.obtenerBaseUrl();
-            const res = await fetch(`${baseUrl}/health`, {
-                method: 'GET',
-                headers: { 'Accept': 'application/json' }
-            });
-
-            if (!res.ok) {
-                ApiConfig.conectadoABaseDatos = false;
-                return false;
-            }
-
-            const data = await res.json();
-            ApiConfig.conectadoABaseDatos = Boolean(data && data.conectado);
-            return ApiConfig.conectadoABaseDatos;
-        } catch (err) {
-            console.warn("Servidor backend Node.js no disponible (se usará Modo Local):", err.message);
-            ApiConfig.conectadoABaseDatos = false;
-            return false;
-        }
-    },
-
     // ------------------------------------------------------------
     // MÓDULO 1: USUARIOS Y AUTENTICACIÓN
     // ------------------------------------------------------------
     usuarios: {
+        /**
+         * GET /api/usuarios
+         * Obtiene la lista completa de usuarios registrados en MySQL
+         */
         async listar() {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/usuarios`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const json = await res.json();
-                return json.error ? null : json.datos;
+                return json.error ? [] : json.datos;
             } catch (e) {
                 console.warn("Error al listar usuarios desde la API Node.js:", e);
-                return null;
+                return [];
             }
         },
 
+        /**
+         * POST /api/usuarios  (action: 'login')
+         * Autentica un usuario contra la base de datos MySQL
+         */
         async login(usuario, pass) {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/usuarios`, {
                     method: 'POST',
@@ -71,12 +49,15 @@ const API = {
                 return await res.json();
             } catch (e) {
                 console.warn("Error al autenticar en API Node.js:", e);
-                return null;
+                return { error: true, mensaje: e.message || "Error de red al autenticar." };
             }
         },
 
+        /**
+         * POST /api/usuarios
+         * Registra un nuevo usuario en la base de datos MySQL
+         */
         async registrar(datos) {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/usuarios`, {
                     method: 'POST',
@@ -86,7 +67,7 @@ const API = {
                 return await res.json();
             } catch (e) {
                 console.warn("Error al registrar usuario en API Node.js:", e);
-                return null;
+                return { error: true, mensaje: e.message || "Error de red al registrar usuario." };
             }
         }
     },
@@ -95,16 +76,19 @@ const API = {
     // MÓDULO 2: PACIENTES Y FILIACIÓN
     // ------------------------------------------------------------
     pacientes: {
+        /**
+         * GET /api/pacientes
+         * Obtiene la lista completa de pacientes desde MySQL
+         */
         async listar() {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/pacientes`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const json = await res.json();
-                return json.error ? null : json.datos;
+                return json.error ? [] : json.datos;
             } catch (e) {
                 console.warn("Error al listar pacientes desde API Node.js:", e);
-                return null;
+                return [];
             }
         },
 
@@ -113,7 +97,6 @@ const API = {
          * Buscar paciente por DNI o ID y devolver sus datos junto con su dirección/ficha
          */
         async buscarPorDni(dni) {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/pacientes/${encodeURIComponent(dni)}`);
                 if (res.status === 404) {
@@ -136,7 +119,6 @@ const API = {
          * Registrar un nuevo paciente en la tabla 'persona'
          */
         async registrar(datosPaciente) {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/pacientes`, {
                     method: 'POST',
@@ -159,8 +141,11 @@ const API = {
     // MÓDULO 3: ATENCIONES CLÍNICAS Y TRIAJE
     // ------------------------------------------------------------
     atenciones: {
+        /**
+         * GET /api/atenciones
+         * Lista las atenciones con filtros opcionales de DNI y diagnóstico desde MySQL
+         */
         async listar(filtroDni = '', filtroDiag = 'TODOS') {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const params = new URLSearchParams();
                 if (filtroDni) params.append('dni', filtroDni);
@@ -169,10 +154,10 @@ const API = {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/atenciones?${params.toString()}`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const json = await res.json();
-                return json.error ? null : json.datos;
+                return json.error ? [] : json.datos;
             } catch (e) {
                 console.warn("Error al listar atenciones desde API Node.js:", e);
-                return null;
+                return [];
             }
         },
 
@@ -181,7 +166,6 @@ const API = {
          * Guardar un nuevo registro de atención/triaje IRA/EDA
          */
         async registrar(datosAtencion) {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/atenciones`, {
                     method: 'POST',
@@ -204,21 +188,27 @@ const API = {
     // MÓDULO 4: BOTIQUÍN E INVENTARIO
     // ------------------------------------------------------------
     botiquin: {
+        /**
+         * GET /api/botiquin
+         * Obtiene la lista de medicamentos e insumos del inventario desde MySQL
+         */
         async listar() {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/botiquin`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const json = await res.json();
-                return json.error ? null : json.datos;
+                return json.error ? [] : json.datos;
             } catch (e) {
                 console.warn("Error al listar botiquín desde API Node.js:", e);
-                return null;
+                return [];
             }
         },
 
+        /**
+         * POST /api/botiquin
+         * Agrega o actualiza un medicamento en el inventario de MySQL
+         */
         async agregarOActualizar(datosMedicamento) {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/botiquin`, {
                     method: 'POST',
@@ -228,12 +218,15 @@ const API = {
                 return await res.json();
             } catch (e) {
                 console.warn("Error al registrar medicamento en API Node.js:", e);
-                return null;
+                return { error: true, mensaje: e.message || "Error de red al registrar medicamento." };
             }
         },
 
+        /**
+         * POST /api/botiquin/descontar
+         * Descuenta stock de un medicamento por código en MySQL
+         */
         async descontar(codigo, cantidad = 1) {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/botiquin/descontar`, {
                     method: 'POST',
@@ -243,7 +236,7 @@ const API = {
                 return await res.json();
             } catch (e) {
                 console.warn("Error al descontar stock en API Node.js:", e);
-                return null;
+                return { error: true, mensaje: e.message || "Error de red al descontar stock." };
             }
         }
     },
@@ -252,8 +245,11 @@ const API = {
     // MÓDULO 5: DERIVACIONES
     // ------------------------------------------------------------
     derivaciones: {
+        /**
+         * POST /api/derivaciones
+         * Registra una nueva derivación de paciente en MySQL
+         */
         async registrar(datosDerivacion) {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/derivaciones`, {
                     method: 'POST',
@@ -263,7 +259,7 @@ const API = {
                 return await res.json();
             } catch (e) {
                 console.warn("Error al registrar derivación en API Node.js:", e);
-                return null;
+                return { error: true, mensaje: e.message || "Error de red al registrar derivación." };
             }
         }
     },
@@ -272,8 +268,11 @@ const API = {
     // MÓDULO 6: REPORTES Y VIGILANCIA
     // ------------------------------------------------------------
     reportes: {
+        /**
+         * GET /api/reportes
+         * Obtiene las estadísticas epidemiológicas desde MySQL
+         */
         async obtenerEstadisticas() {
-            if (!ApiConfig.conectadoABaseDatos) return null;
             try {
                 const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/reportes`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);

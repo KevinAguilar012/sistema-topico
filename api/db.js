@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-const primaryDatabase = process.env.DB_NAME || 'sistema_salud';
+const primaryDatabase = process.env.DB_NAME || 'sistema-topico';
 
 const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
