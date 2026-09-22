@@ -4,27 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Tópico - IESTP Carhuaz</title>
+    <!-- Fonts & FontAwesome CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- SweetAlert2 & Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <!-- PANTALLA DE ACCESO (LOGIN) -->
     <div id="loginView" class="login-card">
         <div class="login-header">
-            <img src="assets/images/logo-istec.png" alt="logo IESTP Carhuaz" class="login-logo">
+            <div class="logo-wrapper">
+                <img src="assets/images/logo-istec.png" alt="logo IESTP Carhuaz" class="login-logo">
+            </div>
             <h2>IESTP CARHUAZ</h2>
-            <p>Sistema Integral del Tópico Institucional</p>
+            <p><i class="fa-solid fa-hospital-user"></i> Sistema Integral del Tópico Institucional</p>
         </div>
         <form id="loginForm">
             <div class="input-group">
-                <label for="username">Usuario:</label>
-                <input type="text" id="username" placeholder="Ingrese su usuario" required autocomplete="off">
+                <label for="username"><i class="fa-solid fa-user"></i> Usuario:</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user input-icon"></i>
+                    <input type="text" id="username" placeholder="Ingrese su usuario" required autocomplete="off">
+                </div>
             </div>
             <div class="input-group">
-                <label for="password">Contraseña:</label>
-                <input type="password" id="password" placeholder="Ingrese su contraseña" required>
+                <label for="password"><i class="fa-solid fa-key"></i> Contraseña:</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input type="password" id="password" placeholder="Ingrese su contraseña" required>
+                    <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility('password', this)" title="Mostrar / Ocultar contraseña">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
             </div>
-            <button type="submit" class="btn-primary">Ingresar al Sistema</button>
+            <button type="submit" class="btn-primary btn-login">
+                <i class="fa-solid fa-right-to-bracket"></i> Ingresar al Sistema
+            </button>
             <p id="errorMsg" class="error-msg hidden">Ingrese credenciales válidas.</p>
         </form>
     </div>
@@ -34,9 +57,17 @@
         
         <!-- BARRA DE MENÚ SUPERIOR -->
         <nav class="menu-bar">
-            <div class="user-info-bar">
-                <span id="userDisplayName">Lic. En Enfermería</span> | 
-                <a href="#" id="btnLogout" style="color: #feb2b2; text-decoration: none;">Salir</a>
+            <div class="brand-title">
+                <span class="brand-icon"><i class="fa-solid fa-briefcase-medical"></i></span>
+                <span class="brand-text">SISTEMA INTEGRAL DEL TÓPICO - IESTP CARHUAZ</span>
+            </div>
+            <div class="menu-bar-right">
+                <div class="header-clock" id="liveClock" title="Fecha y Hora actual">
+                    <i class="fa-regular fa-clock"></i> <span id="clockText">--:--:--</span>
+                </div>
+                <button type="button" id="themeToggleBtn" class="btn-icon-theme" onclick="toggleTheme()" title="Alternar Modo Oscuro / Claro">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
             </div>
         </nav>
 
@@ -44,19 +75,67 @@
         <div class="workspace">
             
             <aside class="sidebar">
-                <h4>Navegación Tópico</h4>
-                <ul>
-                    <li onclick="mostrarSeccion('f1_paciente')">Nuevo Paciente</li>
-                    <li onclick="mostrarSeccion('f2_atencion')">Atención / Triaje</li>
-                    <li onclick="mostrarSeccion('f3_historial')">Historial Clínico</li>
-                    <li onclick="mostrarSeccion('f4_botiquin')">Botiquín y Stock</li>
-                    <li onclick="mostrarSeccion('f5_derivacion')">Derivaciones</li>
-                    <li onclick="mostrarSeccion('f6_reportes')">Vigilancia MINSA</li>
-                    <li onclick="mostrarSeccion('f7_usuarios')">Gest. Usuarios</li>
-                </ul>
+                <div class="sidebar-top">
+                    <h4><i class="fa-solid fa-compass"></i> Navegación Tópico</h4>
+                    <ul>
+                        <li class="active" onclick="mostrarSeccion('f1_paciente')"><i class="fa-solid fa-user-plus"></i> <span>Nuevo Paciente</span></li>
+                        <li onclick="mostrarSeccion('f2_atencion')"><i class="fa-solid fa-stethoscope"></i> <span>Atención / Triaje</span></li>
+                        <li onclick="mostrarSeccion('f3_historial')"><i class="fa-solid fa-file-medical"></i> <span>Historial Clínico</span></li>
+                        <li onclick="mostrarSeccion('f4_botiquin')"><i class="fa-solid fa-pills"></i> <span>Botiquín y Stock</span></li>
+                        <li onclick="mostrarSeccion('f5_derivacion')"><i class="fa-solid fa-truck-medical"></i> <span>Derivaciones</span></li>
+                        <li onclick="mostrarSeccion('f6_reportes')"><i class="fa-solid fa-chart-pie"></i> <span>Vigilancia MINSA</span></li>
+                        <li onclick="mostrarSeccion('f7_usuarios')"><i class="fa-solid fa-user-gear"></i> <span>Gest. Usuarios</span></li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-user-footer">
+                    <div class="user-profile-box">
+                        <div class="user-avatar"><i class="fa-solid fa-user-nurse"></i></div>
+                        <div class="user-info">
+                            <span class="user-label">Usuario Activo</span>
+                            <span id="userDisplayName" class="user-name">Lic. En Enfermería</span>
+                        </div>
+                    </div>
+                    <button type="button" id="btnLogout" class="btn-logout-sidebar">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </div>
             </aside>
 
             <main class="content-area">
+                
+                <!-- TARJETAS DE MÉTRICAS KPI (DASHBOARD HIGHLIGHTS) -->
+                <div class="kpi-metrics-grid">
+                    <div class="kpi-card kpi-blue">
+                        <div class="kpi-icon-bg"><i class="fa-solid fa-user-check"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Atenciones Hoy</span>
+                            <h3 class="kpi-value" id="kpiAtenciones">0</h3>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-orange">
+                        <div class="kpi-icon-bg"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Stock en Alerta</span>
+                            <h3 class="kpi-value" id="kpiStockAlerta">0</h3>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-teal">
+                        <div class="kpi-icon-bg"><i class="fa-solid fa-users"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Pacientes Registrados</span>
+                            <h3 class="kpi-value" id="kpiPacientes">0</h3>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-purple">
+                        <div class="kpi-icon-bg"><i class="fa-solid fa-truck-medical"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Derivaciones</span>
+                            <h3 class="kpi-value" id="kpiDerivaciones">0</h3>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- FORMULARIO 1: REGISTRO Y FILIACIÓN DEL PACIENTE -->
                 <div id="secF1" class="form-module">
@@ -944,26 +1023,37 @@
                 <!-- FORMULARIO 6: REPORTES Y VIGILANCIA EPIDEMIOLÓGICA -->
                 <div id="secF6" class="form-module hidden">
                     <div class="ficha-header">
-                        <h2>FORMULARIO 6: VIGILANCIA EPIDEMIOLÓGICA (MINSA / INSTITUCIONAL)</h2>
+                        <h2><i class="fa-solid fa-chart-pie"></i> VIGILANCIA EPIDEMIOLÓGICA (MINSA / INSTITUCIONAL)</h2>
                         <p>Consolidado y Resumen Estadístico de Casos IRAS / EDAS</p>
                     </div>
 
                     <div class="stats-grid">
                         <div class="stat-card stat-ira">
-                            <h3>Casos Totales IRAS</h3>
+                            <h3><i class="fa-solid fa-head-side-cough"></i> Casos Totales IRAS</h3>
                             <span id="f6CntIra">0</span>
                         </div>
                         <div class="stat-card stat-eda">
-                            <h3>Casos Totales EDAS</h3>
+                            <h3><i class="fa-solid fa-bacteria"></i> Casos Totales EDAS</h3>
                             <span id="f6CntEda">0</span>
                         </div>
                         <div class="stat-card stat-total">
-                            <h3>Total Atenciones Tópico</h3>
+                            <h3><i class="fa-solid fa-hospital-user"></i> Total Atenciones Tópico</h3>
                             <span id="f6CntTotal">0</span>
                         </div>
                     </div>
 
-                    <h3 style="margin: 20px 0 10px 0; color: #2b6cb0;">Distribución de Casos por Programa de Estudio</h3>
+                    <!-- GRÁFICO INTERACTIVO EPIDEMIOLÓGICO -->
+                    <div class="chart-container-card">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-column"></i> Gráfico Epidemiológico de Atenciones</h3>
+                            <span class="chart-subtitle">Resumen Comparativo IRAS vs EDAS por Programa</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="minsaChartCanvas" height="240"></canvas>
+                        </div>
+                    </div>
+
+                    <h3 style="margin: 20px 0 10px 0; color: var(--primary-color, #2b6cb0);"><i class="fa-solid fa-table-list"></i> Distribución de Casos por Programa de Estudio</h3>
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>

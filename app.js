@@ -43,6 +43,141 @@ function mostrarAlerta(titulo, mensaje, icono = 'info') {
 }
 
 // ================================================================
+// FUNCIONES UI ESTÉTICAS: MODO OSCURO, RELOJ, CONTRASEÑA, KPIS, CHART
+// ================================================================
+function toggleTheme() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) {
+        btn.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+    }
+    if (window._ultimoDataMinsaProgramas) {
+        renderizarGraficoMinsa(window._ultimoDataMinsaProgramas);
+    }
+}
+
+function inicializarTema() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+    }
+}
+
+function iniciarReloj() {
+    function update() {
+        const clockEl = document.getElementById('clockText');
+        if (clockEl) {
+            const ahora = new Date();
+            clockEl.innerText = ahora.toLocaleTimeString('es-PE');
+        }
+    }
+    update();
+    setInterval(update, 1000);
+}
+
+function togglePasswordVisibility(inputId, btnEl) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    if (btnEl) {
+        btnEl.innerHTML = isPass ? '<i class="fa-solid fa-eye-slash"></i>' : '<i class="fa-solid fa-eye"></i>';
+    }
+}
+
+async function actualizarKpiMetrics() {
+    try {
+        const atenciones = (typeof API !== 'undefined' && API.atenciones) ? await API.atenciones.listar() : [];
+        const botiquin = (typeof API !== 'undefined' && API.botiquin) ? await API.botiquin.listar() : [];
+        const derivaciones = (typeof API !== 'undefined' && API.derivaciones) ? await API.derivaciones.listar() : [];
+        
+        const hoyStr = new Date().toLocaleDateString('es-PE');
+        const atencionesHoy = (atenciones || []).filter(a => (a.fecha || '').includes(hoyStr)).length;
+        const stockAlerta = (botiquin || []).filter(b => parseInt(b.stock || 0, 10) <= 10).length;
+        const pacSet = new Set((atenciones || []).map(a => a.dni).filter(Boolean));
+        
+        const kpiAt = document.getElementById('kpiAtenciones');
+        const kpiAl = document.getElementById('kpiStockAlerta');
+        const kpiPac = document.getElementById('kpiPacientes');
+        const kpiDer = document.getElementById('kpiDerivaciones');
+
+        if (kpiAt) kpiAt.innerText = atencionesHoy > 0 ? atencionesHoy : (atenciones ? atenciones.length : 0);
+        if (kpiAl) kpiAl.innerText = stockAlerta;
+        if (kpiPac) kpiPac.innerText = pacSet.size || (atenciones ? atenciones.length : 0);
+        if (kpiDer) kpiDer.innerText = Array.isArray(derivaciones) ? derivaciones.length : 0;
+    } catch (e) {
+        console.warn("KPI metrics notice:", e);
+    }
+}
+
+let _minsaChartInstance = null;
+function renderizarGraficoMinsa(datosProgramas) {
+    window._ultimoDataMinsaProgramas = datosProgramas;
+    const ctx = document.getElementById('minsaChartCanvas');
+    if (!ctx || typeof Chart === 'undefined') return;
+
+    if (_minsaChartInstance) {
+        _minsaChartInstance.destroy();
+    }
+
+    const labels = datosProgramas.map(p => {
+        if (p.programa.includes("Enfermería")) return "Enfermería Técnica";
+        if (p.programa.includes("Arquitectura")) return "T.I. / Software";
+        return "Docentes / Apoyo";
+    });
+    const dataIra = datosProgramas.map(p => p.iras);
+    const dataEda = datosProgramas.map(p => p.edas);
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#f8fafc' : '#1e293b';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
+
+    _minsaChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Casos IRAS',
+                    data: dataIra,
+                    backgroundColor: '#0d9488',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Casos EDAS',
+                    data: dataEda,
+                    backgroundColor: '#ea580c',
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: textColor, font: { family: 'Inter', weight: '600' } }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: textColor, font: { family: 'Inter', size: 11 } },
+                    grid: { color: gridColor }
+                },
+                y: {
+                    ticks: { color: textColor, precision: 0 },
+                    grid: { color: gridColor },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// ================================================================
 // 1. ESTADO Y CONFIGURACIÓN DE LA INTERFAZ
 // ================================================================
 function actualizarEstadoUI(conectado = true) {
@@ -52,7 +187,7 @@ function actualizarEstadoUI(conectado = true) {
 
     if (badge) {
         badge.className = 'db-status-badge db-online';
-        badge.innerHTML = '🟢 BD MySQL Conectada (Node.js API)';
+        badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> BD MySQL Conectada (Node.js API)';
         badge.title = 'Conexión activa con MySQL (http://localhost:3000/api)';
     }
     if (loginDot) loginDot.innerText = '🟢';
@@ -66,6 +201,9 @@ function actualizarEstadoUI(conectado = true) {
 // 2. INICIALIZACIÓN DEL SISTEMA
 // ================================================================
 document.addEventListener('DOMContentLoaded', async () => {
+
+    inicializarTema();
+    iniciarReloj();
 
     if (typeof inicializarUbigeo === 'function') {
         inicializarUbigeo();
@@ -89,6 +227,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Establecer estado visual de la base de datos
     actualizarEstadoUI(true);
 
+    // Cargar métricas iniciales
+    await actualizarKpiMetrics();
+
     // ------------------------------------------------------------
     // LOGIN
     // ------------------------------------------------------------
@@ -111,6 +252,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await renderizarTablaUsuarios();
                     await actualizarReportesF6();
                     await renderizarTablaF3();
+                    await actualizarKpiMetrics();
                     if (errorMsg) errorMsg.classList.add('hidden');
                 } else {
                     if (errorMsg) {
@@ -392,7 +534,12 @@ async function mostrarSeccion(idSec) {
         if (el) el.classList.add('hidden');
     });
 
-    document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
+    document.querySelectorAll('.sidebar li').forEach(li => {
+        li.classList.remove('active');
+        if (li.getAttribute('onclick') && li.getAttribute('onclick').includes(idSec)) {
+            li.classList.add('active');
+        }
+    });
 
     const mapeo = {
         'f1_paciente': 'secF1',
@@ -409,6 +556,8 @@ async function mostrarSeccion(idSec) {
         const elem = document.getElementById(secId);
         if (elem) elem.classList.remove('hidden');
     }
+
+    await actualizarKpiMetrics();
 
     if (idSec === 'f3_historial') await renderizarTablaF3();
     if (idSec === 'f4_botiquin') await renderizarTablaBotiquin();
@@ -645,13 +794,13 @@ async function renderizarTablaBotiquin() {
         const stock = parseInt(item.stock || 0, 10);
         const bajoStock = stock <= 10;
         const estado = bajoStock 
-            ? `<span style="color: #e53e3e; font-weight: bold; background: #fff5f5; padding: 2px 5px; border-radius: 4px;">⚠️ Bajo Stock</span>`
-            : `<span style="color: #38a169; font-weight: bold; background: #f0fff4; padding: 2px 5px; border-radius: 4px;">✅ Disponible</span>`;
+            ? `<span class="badge badge-danger"><i class="fa-solid fa-triangle-exclamation"></i> Bajo Stock</span>`
+            : `<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Disponible</span>`;
 
         tr.innerHTML = `
             <td><strong>${item.codigo || `MED-00${item.id}`}</strong></td>
             <td>${item.nombre || ''}</td>
-            <td>${item.categoria || 'General'}</td>
+            <td><span class="badge badge-info">${item.categoria || 'General'}</span></td>
             <td style="font-weight: bold; font-size: 13px;">${stock} unidades</td>
             <td>${item.vencimiento || '-'}</td>
             <td>${estado}</td>
@@ -664,6 +813,7 @@ async function descontarStockBotiquin(diag) {
     const codigo = diag === 'IRA' ? 'MED-001' : 'MED-002';
     await API.botiquin.descontar(codigo, 1);
     await renderizarTablaBotiquin();
+    await actualizarKpiMetrics();
 }
 
 // ================================================================
@@ -686,7 +836,7 @@ async function renderizarTablaUsuarios() {
         tr.innerHTML = `
             <td><strong>${item.nombre || ''}</strong></td>
             <td>${item.cep || ''}</td>
-            <td>${item.usuario || ''}</td>
+            <td><span class="badge badge-info">${item.usuario || ''}</span></td>
             <td>${item.turno || ''}</td>
         `;
         tbody.appendChild(tr);
@@ -716,23 +866,33 @@ async function actualizarReportesF6() {
         "Otros (Docentes, Administrativos y Externos)"
     ];
 
+    const datosProgramas = [];
     const tbody = document.getElementById('f6TablaProgramas');
-    if (!tbody) return;
-    tbody.innerHTML = "";
+    if (tbody) tbody.innerHTML = "";
 
     programas.forEach(prog => {
         const cIra = atenciones.filter(x => x.programa === prog && x.diagnostico === 'IRA').length;
         const cEda = atenciones.filter(x => x.programa === prog && x.diagnostico === 'EDA').length;
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${prog}</td>
-            <td style="text-align: center; color: #319795; font-weight: bold;">${cIra}</td>
-            <td style="text-align: center; color: #dd6b20; font-weight: bold;">${cEda}</td>
-            <td style="text-align: center; font-weight: bold; background: #f7fafc;">${cIra + cEda}</td>
-        `;
-        tbody.appendChild(tr);
+        datosProgramas.push({
+            programa: prog,
+            iras: cIra,
+            edas: cEda
+        });
+
+        if (tbody) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${prog}</td>
+                <td style="text-align: center; color: var(--secondary); font-weight: bold;">${cIra}</td>
+                <td style="text-align: center; color: var(--color-warning); font-weight: bold;">${cEda}</td>
+                <td style="text-align: center; font-weight: bold;"><span class="badge badge-info">${cIra + cEda}</span></td>
+            `;
+            tbody.appendChild(tr);
+        }
     });
+
+    renderizarGraficoMinsa(datosProgramas);
 }
 
 // ================================================================
