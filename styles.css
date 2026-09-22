@@ -862,3 +862,16 @@ body {
     letter-spacing: 0.5px;
     font-weight: 600;
 }
+
+/* Selector triple de fecha de nacimiento */
+.fecha-triple-select {
+    display: flex;
+    gap: 6px;
+}
+
+.fecha-triple-select select {
+    flex: 1;
+    min-width: 0;
+    padding-left: 6px;
+    padding-right: 4px;
+}

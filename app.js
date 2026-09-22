@@ -209,6 +209,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         inicializarUbigeo();
     }
     
+    inicializarSelectsFechaNacF1();
+
     // Toggle visibilidad del apoderado según programa
     toggleApoderadoF1();
 
@@ -898,6 +900,73 @@ async function actualizarReportesF6() {
 // ================================================================
 // 11. UTILIDADES DE FORMULARIO
 // ================================================================
+function inicializarSelectsFechaNacF1() {
+    const selectDia = document.getElementById('f1FechaNacDia');
+    const selectAnio = document.getElementById('f1FechaNacAnio');
+    
+    if (selectDia) {
+        let htmlDias = '<option value="">Día</option>';
+        for (let d = 1; d <= 31; d++) {
+            const val = String(d).padStart(2, '0');
+            htmlDias += `<option value="${val}">${d}</option>`;
+        }
+        selectDia.innerHTML = htmlDias;
+    }
+
+    if (selectAnio) {
+        let htmlAnios = '<option value="">Año</option>';
+        const anioActual = new Date().getFullYear();
+        for (let a = anioActual; a >= 1910; a--) {
+            htmlAnios += `<option value="${a}">${a}</option>`;
+        }
+        selectAnio.innerHTML = htmlAnios;
+    }
+
+    const formF1 = document.getElementById('formF1');
+    if (formF1) {
+        formF1.addEventListener('reset', () => {
+            setTimeout(() => {
+                actualizarFechaNacF1();
+            }, 0);
+        });
+    }
+}
+
+function actualizarFechaNacF1() {
+    const diaEl = document.getElementById('f1FechaNacDia');
+    const mesEl = document.getElementById('f1FechaNacMes');
+    const anioEl = document.getElementById('f1FechaNacAnio');
+    const hiddenEl = document.getElementById('f1FechaNac');
+
+    if (!diaEl || !mesEl || !anioEl || !hiddenEl) return;
+
+    const dia = diaEl.value;
+    const mes = mesEl.value;
+    const anio = anioEl.value;
+
+    // Ajustar número de días si hay un mes seleccionado
+    if (mes) {
+        const dMax = new Date(anio ? parseInt(anio, 10) : 2000, parseInt(mes, 10), 0).getDate();
+        const diaActual = diaEl.value;
+        let htmlDias = '<option value="">Día</option>';
+        for (let d = 1; d <= dMax; d++) {
+            const val = String(d).padStart(2, '0');
+            const selected = val === diaActual ? 'selected' : '';
+            htmlDias += `<option value="${val}" ${selected}>${d}</option>`;
+        }
+        diaEl.innerHTML = htmlDias;
+    }
+
+    if (dia && mes && anio) {
+        const fechaIso = `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+        hiddenEl.value = fechaIso;
+        calcularEdadF1(fechaIso);
+    } else {
+        hiddenEl.value = '';
+        const inputEdad = document.getElementById('f1Edad');
+        if (inputEdad) inputEdad.value = '';
+    }
+}
 function calcularEdadF1(fechaNacimiento) {
     if (!fechaNacimiento) return;
     const hoy = new Date();

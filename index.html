@@ -189,8 +189,31 @@
                                     <input type="text" id="f1Nombres" required>
                                 </div>
                                 <div class="input-group">
-                                    <label for="f1FechaNac">Fecha de Nacimiento:</label>
-                                    <input type="date" id="f1FechaNac" required onchange="calcularEdadF1(this.value)">
+                                    <label>Fecha de Nacimiento:</label>
+                                    <div class="fecha-triple-select">
+                                        <select id="f1FechaNacDia" required onchange="actualizarFechaNacF1()">
+                                            <option value="">Día</option>
+                                        </select>
+                                        <select id="f1FechaNacMes" required onchange="actualizarFechaNacF1()">
+                                            <option value="">Mes</option>
+                                            <option value="01">Enero</option>
+                                            <option value="02">Febrero</option>
+                                            <option value="03">Marzo</option>
+                                            <option value="04">Abril</option>
+                                            <option value="05">Mayo</option>
+                                            <option value="06">Junio</option>
+                                            <option value="07">Julio</option>
+                                            <option value="08">Agosto</option>
+                                            <option value="09">Setiembre</option>
+                                            <option value="10">Octubre</option>
+                                            <option value="11">Noviembre</option>
+                                            <option value="12">Diciembre</option>
+                                        </select>
+                                        <select id="f1FechaNacAnio" required onchange="actualizarFechaNacF1()">
+                                            <option value="">Año</option>
+                                        </select>
+                                    </div>
+                                    <input type="hidden" id="f1FechaNac" name="f1FechaNac">
                                 </div>
                                 <div class="input-group">
                                     <label for="f1Edad">Edad (Calculada automáticamente):</label>
@@ -212,13 +235,6 @@
                                     <label for="f1Nacionalidad">Nacionalidad:</label>
                                     <select id="f1Nacionalidad" required>
                                         <option value="Peruana" selected>Peruana</option>
-                                        <option value="Venezolana">Venezolana</option>
-                                        <option value="Colombiana">Colombiana</option>
-                                        <option value="Ecuatoriana">Ecuatoriana</option>
-                                        <option value="Boliviana">Boliviana</option>
-                                        <option value="Chilena">Chilena</option>
-                                        <option value="Argentina">Argentina</option>
-                                        <option value="Otra">Otra nacionalidad</option>
                                     </select>
                                 </div>
                                 <div class="input-group">
