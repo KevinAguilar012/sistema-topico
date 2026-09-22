@@ -524,16 +524,17 @@ async function renderizarTablaF3(datos = null) {
     if (!tbody) return;
     tbody.innerHTML = "";
 
-    const lista = datos || await API.atenciones.listar();
+    const lista = datos !== null ? datos : await API.atenciones.listar();
 
     if (!lista || lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #a0aec0; padding: 15px;">No hay registros de atenciones médicas.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #a0aec0; padding: 15px;">No hay registros de atenciones médicas.</td></tr>`;
         return;
     }
 
-    const ordenados = [...lista].reverse();
+    // El servidor ya devuelve la lista en orden descendente (más recientes primero)
+    window._ultimasAtencionesF3 = lista;
 
-    ordenados.forEach(item => {
+    lista.forEach((item, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${item.fecha || ''}</td>
@@ -544,13 +545,22 @@ async function renderizarTablaF3(datos = null) {
             <td>${item.temp ? item.temp + ' °C' : '-'}</td>
             <td>${item.destino || ''}</td>
             <td>${item.licenciada || ''}</td>
+            <td>
+                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto; background-color: #3182ce;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
+function abrirModalRecetaDesdeHistorial(index) {
+    if (window._ultimasAtencionesF3 && window._ultimasAtencionesF3[index]) {
+        mostrarModalReceta(window._ultimasAtencionesF3[index]);
+    }
+}
+
 async function filtrarTablaF3() {
-    const texto = (document.getElementById('f3FiltroDni')?.value || '').toLowerCase();
+    const texto = (document.getElementById('f3FiltroDni')?.value || '').trim();
     const diagFiltro = document.getElementById('f3FiltroDiag')?.value || 'TODOS';
 
     const filtrados = await API.atenciones.listar(texto, diagFiltro);

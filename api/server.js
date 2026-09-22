@@ -259,10 +259,11 @@ app.post('/api/pacientes', async (req, res) => {
  */
 app.get('/api/atenciones', async (req, res) => {
     try {
-        const sql = `
+        const { dni, diagnostico } = req.query;
+        let sql = `
             SELECT 
                 a.idatencion AS id,
-                CONCAT(a.fecha_atencion, ' ', a.hora_atencion) AS fecha,
+                COALESCE(DATE_FORMAT(CONCAT(a.fecha_atencion, ' ', a.hora_atencion), '%d/%m/%Y %H:%i'), DATE_FORMAT(a.fecha_atencion, '%d/%m/%Y')) AS fecha,
                 p.dni,
                 CONCAT(p.apellido_paterno, ' ', COALESCE(p.apellido_materno, ''), ', ', p.nombres) AS paciente,
                 COALESCE(c.nombre_carrera, 'Enfermería Técnica') AS programa,
@@ -278,9 +279,24 @@ app.get('/api/atenciones', async (req, res) => {
             LEFT JOIN evaluacion_clinica ec ON ec.atencion_idatencion = a.idatencion
             LEFT JOIN estudiante est ON est.persona_idpersona = p.idpersona
             LEFT JOIN carrera c ON est.carrera_idcarrera = c.idcarrera
-            ORDER BY a.idatencion DESC
+            WHERE 1=1
         `;
-        const datos = await query(sql);
+        const params = [];
+
+        if (dni && dni.trim() !== '') {
+            const term = `%${dni.trim()}%`;
+            sql += ` AND (p.dni LIKE ? OR p.nombres LIKE ? OR p.apellido_paterno LIKE ? OR p.apellido_materno LIKE ?)`;
+            params.push(term, term, term, term);
+        }
+
+        if (diagnostico && diagnostico.trim() !== '' && diagnostico !== 'TODOS') {
+            sql += ` AND (ta.nombre = ? OR a.motivo_consulta LIKE ?)`;
+            params.push(diagnostico.trim(), `%${diagnostico.trim()}%`);
+        }
+
+        sql += ` ORDER BY a.idatencion DESC`;
+
+        const datos = await query(sql, params);
         res.status(200).json({ error: false, datos });
     } catch (err) {
         console.error("Error al listar atenciones:", err);
@@ -396,11 +412,47 @@ app.post('/api/botiquin', (req, res) => {
     res.json({ error: false, mensaje: "Insumo procesado correctamente." });
 });
 
+// Helper para asegurar la tabla 'usuarios' (Personal de Salud) en MySQL
+async function asegurarTablaUsuarios() {
+    try {
+        const sql = `
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                cep VARCHAR(50) NOT NULL,
+                usuario VARCHAR(50) NOT NULL UNIQUE,
+                pass VARCHAR(255) NOT NULL,
+                turno VARCHAR(50) DEFAULT 'Mañana',
+                estado TINYINT(1) DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `;
+        await query(sql);
+    } catch (err) {
+        console.warn("No se pudo auto-crear la tabla 'usuarios':", err.message);
+    }
+}
+
+function trimVal(val) {
+    return typeof val === 'string' ? val.trim() : (val || '');
+}
+
 // Usuarios Login y Listar
 app.get('/api/usuarios', async (req, res) => {
     try {
-        const rows = await query("SELECT idusuario, nombre_usuario AS usuario, 'Lic. Enfermería' AS nombre, 'CEP-12345' AS cep, 'Mañana' AS turno FROM usuario");
-        res.json({ error: false, datos: rows });
+        await asegurarTablaUsuarios();
+        const rows = await query("SELECT id, nombre, cep, usuario, turno, created_at FROM usuarios WHERE estado = 1 ORDER BY id ASC");
+        if (rows && rows.length > 0) {
+            return res.json({ error: false, datos: rows });
+        }
+        
+        // Si no hay en 'usuarios', intentar listar desde 'usuario' (docentes de muestra)
+        try {
+            const docenteRows = await query("SELECT idusuario AS id, nombre_usuario AS usuario, 'Lic. Enfermería' AS nombre, 'CEP-12345' AS cep, 'Mañana' AS turno FROM usuario");
+            return res.json({ error: false, datos: docenteRows });
+        } catch (e) {
+            return res.json({ error: false, datos: [] });
+        }
     } catch (err) {
         res.json({ error: false, datos: [] });
     }
@@ -413,26 +465,31 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
             return res.status(400).json({ error: true, mensaje: "Ingrese usuario y contraseña." });
         }
         try {
+            await asegurarTablaUsuarios();
             let rows = [];
             try {
-                // Consultar en tabla 'usuario' (schema bd_topico_instituto)
-                rows = await query("SELECT idusuario, nombre_usuario AS usuario, contrasena AS pass FROM usuario WHERE nombre_usuario = ? AND estado = 1 LIMIT 1", [usuario]);
-            } catch (e) {
-                // Fallback a tabla 'usuarios' (schema alternativo)
-                rows = await query("SELECT id AS idusuario, usuario, pass FROM usuarios WHERE usuario = ? AND estado = 1 LIMIT 1", [usuario]);
+                // Consultar primero en tabla 'usuarios' (Personal de Salud)
+                rows = await query("SELECT id, nombre, cep, usuario, pass, turno FROM usuarios WHERE usuario = ? AND estado = 1 LIMIT 1", [usuario]);
+            } catch (e) {}
+
+            if (!rows || rows.length === 0) {
+                try {
+                    // Fallback a tabla 'usuario' (schema bd_topico_instituto)
+                    rows = await query("SELECT idusuario AS id, nombre_usuario AS usuario, contrasena AS pass, 'Lic. Enfermería' AS nombre, 'Mañana' AS turno FROM usuario WHERE nombre_usuario = ? AND estado = 1 LIMIT 1", [usuario]);
+                } catch (e2) {}
             }
 
-            if (rows.length > 0) {
+            if (rows && rows.length > 0) {
                 const user = rows[0];
                 if (user.pass === pass) {
                     return res.json({
                         error: false,
                         mensaje: "Autenticación satisfactoria",
                         usuario: {
-                            id: user.idusuario,
-                            nombre: `Lic. ${user.usuario}`,
+                            id: user.id,
+                            nombre: user.nombre || `Lic. ${user.usuario}`,
                             usuario: user.usuario,
-                            turno: 'Mañana'
+                            turno: user.turno || 'Mañana'
                         }
                     });
                 }
@@ -453,7 +510,40 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
             return res.status(500).json({ error: true, mensaje: "Error de base de datos al autenticar." });
         }
     }
-    res.json({ error: false, mensaje: "Usuario registrado exitosamente." });
+
+    // REGISTRO DE NUEVO PERSONAL DE SALUD / USUARIOS
+    const { nombre, cep, turno } = req.body || {};
+    const nombreVal = trimVal(nombre);
+    const cepVal    = trimVal(cep);
+    const userVal   = trimVal(usuario);
+    const passVal   = trimVal(pass);
+    const turnoVal  = trimVal(turno) || 'Mañana';
+
+    if (!nombreVal || !cepVal || !userVal || !passVal) {
+        return res.status(400).json({ error: true, mensaje: "Todos los campos (nombre, cep, usuario, contraseña) son obligatorios." });
+    }
+
+    try {
+        await asegurarTablaUsuarios();
+
+        // Verificar si el usuario ya existe
+        const check = await query("SELECT id FROM usuarios WHERE usuario = ? LIMIT 1", [userVal]);
+        if (check && check.length > 0) {
+            return res.status(409).json({ error: true, mensaje: "El nombre de usuario ya está registrado." });
+        }
+
+        const sql = "INSERT INTO usuarios (nombre, cep, usuario, pass, turno) VALUES (?, ?, ?, ?, ?)";
+        const result = await query(sql, [nombreVal, cepVal, userVal, passVal, turnoVal]);
+
+        return res.status(201).json({
+            error: false,
+            mensaje: "Personal de salud registrado exitosamente.",
+            id: result.insertId
+        });
+    } catch (err) {
+        console.error("Error al registrar usuario:", err);
+        return res.status(500).json({ error: true, mensaje: "Error al registrar usuario en la base de datos: " + err.message });
+    }
 });
 
 // Derivaciones y Reportes

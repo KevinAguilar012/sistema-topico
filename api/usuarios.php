@@ -77,30 +77,34 @@ if ($metodo === 'POST') {
         responderJSON(["error" => true, "mensaje" => "Todos los campos son obligatorios."], 400);
     }
 
-    try {
-        // Verificar si el nombre de usuario ya existe
-        $check = $db->prepare("SELECT id FROM usuarios WHERE usuario = :usuario LIMIT 1");
-        $check->execute([':usuario' => $usuario]);
-        if ($check->fetch()) {
-            responderJSON(["error" => true, "mensaje" => "El nombre de usuario ya está registrado."], 409);
-        }
-
-        $sql = "INSERT INTO usuarios (nombre, cep, usuario, pass, turno) VALUES (:nombre, :cep, :usuario, :pass, :turno)";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([
-            ':nombre'  => $nombre,
-            ':cep'     => $cep,
-            ':usuario' => $usuario,
-            ':pass'    => $pass,
-            ':turno'   => $turno
-        ]);
-
-        responderJSON([
-            "error" => false,
-            "mensaje" => "Personal de salud registrado exitosamente.",
-            "id" => $db->lastInsertId()
-        ], 201);
-    } catch (PDOException $e) {
-        responderJSON(["error" => true, "mensaje" => "Error al registrar usuario: " . $e->getMessage()], 500);
+   try {
+    // 1. Verificar si el nombre de usuario ya existe en la tabla "usuario"
+    $check = $db->prepare("SELECT idusuario FROM usuario WHERE nombre_usuario = :usuario LIMIT 1");
+    $check->execute([':usuario' => $usuario]);
+    if ($check->fetch()) {
+        responderJSON(["error" => true, "mensaje" => "El nombre de usuario ya está registrado."], 409);
     }
+
+    // 2. Insertar en la tabla "usuario" adaptada a tus columnas reales
+    // Nota: 'docente_iddocente' lo enviamos o lo dejamos como NULL si tu tabla lo permite
+    $docente_id = $datos['docente_iddocente'] ?? null; 
+
+    $sql = "INSERT INTO usuario (nombre_usuario, contrasena, estado, docente_iddocente) 
+            VALUES (:usuario, :pass, 1, :docente_id)";
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute([
+        ':usuario'    => $usuario,
+        ':pass'       => $pass,
+        ':docente_id' => $docente_id
+    ]);
+
+    responderJSON([
+        "error" => false,
+        "mensaje" => "Personal registrado exitosamente.",
+        "id" => $db->lastInsertId()
+    ], 201);
+
+   } catch (PDOException $e) {
+    responderJSON(["error" => true, "mensaje" => "Error al registrar usuario: " . $e->getMessage()], 500);
 }
