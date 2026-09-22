@@ -249,6 +249,15 @@ app.post('/api/pacientes', async (req, res) => {
     }
 });
 
+// Helper para asegurar la columna 'licenciada' en la tabla 'atencion'
+async function asegurarColumnaLicenciadaAtencion() {
+    try {
+        await query("ALTER TABLE atencion ADD COLUMN licenciada VARCHAR(150) DEFAULT 'Lic. Enfermería'");
+    } catch (err) {
+        // Ignorar si la columna ya existe
+    }
+}
+
 // ================================================================
 // MÓDULO ATENCIONES
 // ================================================================
@@ -259,6 +268,7 @@ app.post('/api/pacientes', async (req, res) => {
  */
 app.get('/api/atenciones', async (req, res) => {
     try {
+        await asegurarColumnaLicenciadaAtencion();
         const { dni, diagnostico } = req.query;
         let sql = `
             SELECT 
@@ -272,13 +282,14 @@ app.get('/api/atenciones', async (req, res) => {
                 a.motivo_consulta AS subtipo,
                 a.observaciones AS tratamiento,
                 COALESCE(ec.observaciones, 'Tópico / Reposo') AS destino,
-                'Lic. Enfermería' AS licenciada
+                COALESCE(NULLIF(a.licenciada, ''), u.nombre, 'Lic. Enfermería') AS licenciada
             FROM atencion a
             JOIN persona p ON a.persona_idpersona = p.idpersona
             JOIN tipo_atencion ta ON a.tipo_atencion_idtipo_atencion = ta.idtipo_atencion
             LEFT JOIN evaluacion_clinica ec ON ec.atencion_idatencion = a.idatencion
             LEFT JOIN estudiante est ON est.persona_idpersona = p.idpersona
             LEFT JOIN carrera c ON est.carrera_idcarrera = c.idcarrera
+            LEFT JOIN usuarios u ON a.usuario_idusuario = u.id
             WHERE 1=1
         `;
         const params = [];
@@ -310,6 +321,7 @@ app.get('/api/atenciones', async (req, res) => {
  */
 app.post('/api/atenciones', async (req, res) => {
     try {
+        await asegurarColumnaLicenciadaAtencion();
         const body = req.body || {};
         const dni = (body.dni || '').trim();
         const diagnostico = (body.diagnostico || 'Control').trim();
@@ -317,6 +329,7 @@ app.post('/api/atenciones', async (req, res) => {
         const temp = parseFloat(body.temp) || 36.5;
         const tratamiento = body.tratamiento || 'Atención en Tópico';
         const destino = body.destino || 'Tópico / Reposo';
+        const licenciada = (body.licenciada || body.personal || 'Lic. Enfermería').trim();
 
         if (!dni) {
             return res.status(400).json({
@@ -345,9 +358,9 @@ app.post('/api/atenciones', async (req, res) => {
         // 3. Insertar atencion
         const atnResult = await query(
             `INSERT INTO atencion 
-            (codigo_atencion, fecha_atencion, hora_atencion, motivo_consulta, observaciones, persona_idpersona, usuario_idusuario, tipo_atencion_idtipo_atencion) 
-            VALUES (?, CURDATE(), CURTIME(), ?, ?, ?, 1, ?)`,
-            [codigoAtn, subtipo, tratamiento, personaId, idTipoAtencion]
+            (codigo_atencion, fecha_atencion, hora_atencion, motivo_consulta, observaciones, persona_idpersona, usuario_idusuario, tipo_atencion_idtipo_atencion, licenciada) 
+            VALUES (?, CURDATE(), CURTIME(), ?, ?, ?, 1, ?, ?)`,
+            [codigoAtn, subtipo, tratamiento, personaId, idTipoAtencion, licenciada]
         );
         const atencionId = atnResult.insertId;
 
