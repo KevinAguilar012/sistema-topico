@@ -4,6 +4,45 @@
 // ================================================================
 
 // ================================================================
+// HELPER DE NOTIFICACIONES Y ALERTAS (TOAST FLOTANTE CON SWEETALERT2)
+// ================================================================
+function mostrarToast(mensaje, icono = 'success') {
+    if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+        Toast.fire({
+            icon: icono, // 'success', 'error', 'warning', 'info'
+            title: mensaje
+        });
+    } else {
+        alert(mensaje);
+    }
+}
+
+function mostrarAlerta(titulo, mensaje, icono = 'info') {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: titulo,
+            text: mensaje,
+            icon: icono,
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#2b6cb0'
+        });
+    } else {
+        alert(`${titulo}\n\n${mensaje}`);
+    }
+}
+
+// ================================================================
 // 1. ESTADO Y CONFIGURACIÓN DE LA INTERFAZ
 // ================================================================
 function actualizarEstadoUI(conectado = true) {
@@ -113,7 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Verificar en MySQL vía API si el paciente ya está registrado
             const existente = await API.pacientes.buscarPorDni(dni);
             if (existente) {
-                alert(`⚠️ El paciente con DNI ${dni} ya se encuentra registrado con una Historia Clínica.`);
+                mostrarToast(`El paciente con DNI ${dni} ya cuenta con una Historia Clínica activa.`, 'warning');
                 return;
             }
 
@@ -149,11 +188,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const res = await API.pacientes.registrar(paciente);
             if (res && res.error) {
-                alert(`❌ Error al guardar paciente en MySQL: ${res.mensaje}`);
+                mostrarToast(`No se pudo registrar el paciente: ${res.mensaje}`, 'error');
                 return;
             }
 
-            alert(`✅ Historia Clínica ${paciente.historiaClinica} registrada con éxito para ${paciente.nombres} ${paciente.apePaterno}.\n(💾 Guardado en Base de Datos MySQL via Node.js API)`);
+            mostrarToast(`Historia Clínica ${paciente.historiaClinica} registrada para ${paciente.nombres} ${paciente.apePaterno}`, 'success');
             formF1.reset();
             toggleApoderadoF1();
             
@@ -175,13 +214,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const dni = document.getElementById('f2Dni').value;
             if (!dni) {
-                alert("⚠️ Primero debe buscar y cargar los datos de un paciente por su DNI.");
+                mostrarToast("Primero ingrese y busque los datos del paciente por su DNI.", "warning");
                 return;
             }
 
             const diagPrincipal = document.getElementById('f2DiagnosticoMain').value;
             if (!diagPrincipal) {
-                alert("⚠️ Seleccione el Tipo de Diagnóstico / Evaluación (IRA, EDA o General).");
+                mostrarToast("Seleccione el Tipo de Diagnóstico / Evaluación.", "warning");
                 return;
             }
 
@@ -224,12 +263,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const res = await API.atenciones.registrar(atencion);
             if (res && res.error) {
-                alert(`❌ Error al guardar atención en Base de Datos: ${res.mensaje}`);
+                mostrarToast(`Error al guardar la atención: ${res.mensaje}`, 'error');
                 return;
             }
 
             // Descontar medicamento vía API MySQL
             await descontarStockBotiquin(diagPrincipal);
+
+            mostrarToast('Atención registrada con éxito', 'success');
 
             // Mostrar Receta médica
             mostrarModalReceta(atencion);
@@ -270,11 +311,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             if (res && res.error) {
-                alert(`❌ Error al actualizar botiquín: ${res.mensaje}`);
+                mostrarToast(`Error al actualizar botiquín: ${res.mensaje}`, 'error');
                 return;
             }
 
-            alert("✅ Insumo/Medicamento registrado correctamente en MySQL via Node.js API.");
+            mostrarToast(`Insumo / Medicamento "${nombre}" registrado con éxito.`, 'success');
             formF4.reset();
             await renderizarTablaBotiquin();
         });
@@ -304,11 +345,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             if (res && res.error) {
-                alert(`❌ Error al guardar derivación: ${res.mensaje}`);
+                mostrarToast(`Error al guardar derivación: ${res.mensaje}`, 'error');
                 return;
             }
 
-            alert(`🚑 FICHA DE REFERENCIA GENERADA\n\nPaciente: ${nom}\nDestino: ${destino}\nMotivo: ${motivo}\n\n(💾 Registrado en Base de Datos MySQL via Node.js)`);
+            mostrarAlerta("🚑 Ficha de Referencia Generada", `Paciente: ${nom}\nDestino: ${destino}\nMotivo: ${motivo}`, "success");
             formF5.reset();
         });
     }
@@ -330,11 +371,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const res = await API.usuarios.registrar(usr);
             if (res && res.error) {
-                alert(`❌ Error al registrar usuario: ${res.mensaje}`);
+                mostrarToast(`No se pudo registrar el usuario: ${res.mensaje}`, 'error');
                 return;
             }
 
-            alert("👤 Personal registrado exitosamente en MySQL.");
+            mostrarToast(`Personal ${usr.nombre} (${usr.usuario}) registrado con éxito.`, 'success');
             formF7.reset();
             await renderizarTablaUsuarios();
         });
@@ -381,7 +422,7 @@ async function mostrarSeccion(idSec) {
 async function buscarPacienteF2() {
     const dni = document.getElementById('f2BuscarDni').value.trim();
     if (!dni) {
-        alert("Por favor ingrese un número de DNI para la búsqueda.");
+        mostrarToast("Por favor ingrese un número de DNI para la búsqueda.", "warning");
         return;
     }
 
@@ -414,7 +455,7 @@ async function buscarPacienteF2() {
     const infoCard = document.getElementById('pacienteEncontradoInfo');
 
     if (paciente) {
-        const generoEdad = `${paciente.edad} años / ${paciente.genero}`;
+        const edadFormateada = paciente.edad ? `${paciente.edad} años` : '';
 
         // Formulario 2 (Atención Principal)
         if (document.getElementById('f2Dni')) document.getElementById('f2Dni').value = paciente.dni;
@@ -424,20 +465,22 @@ async function buscarPacienteF2() {
         // Ficha de Atención IRA
         if (document.getElementById('iraDni')) document.getElementById('iraDni').value = paciente.dni;
         if (document.getElementById('iraNombreCompleto')) document.getElementById('iraNombreCompleto').value = paciente.nombreCompleto;
-        if (document.getElementById('iraEdadSexo')) document.getElementById('iraEdadSexo').value = generoEdad;
+        if (document.getElementById('iraEdad')) document.getElementById('iraEdad').value = edadFormateada;
+        if (document.getElementById('iraGenero')) document.getElementById('iraGenero').value = paciente.genero || '';
         if (document.getElementById('iraDireccion')) document.getElementById('iraDireccion').value = paciente.domicilio;
 
         // Ficha de Atención EDA
         if (document.getElementById('edaDni')) document.getElementById('edaDni').value = paciente.dni;
         if (document.getElementById('edaNombreCompleto')) document.getElementById('edaNombreCompleto').value = paciente.nombreCompleto;
-        if (document.getElementById('edaEdadSexo')) document.getElementById('edaEdadSexo').value = generoEdad;
+        if (document.getElementById('edaEdad')) document.getElementById('edaEdad').value = edadFormateada;
+        if (document.getElementById('edaGenero')) document.getElementById('edaGenero').value = paciente.genero || '';
         if (document.getElementById('edaDireccion')) document.getElementById('edaDireccion').value = paciente.domicilio;
         if (document.getElementById('edaAcompanante')) document.getElementById('edaAcompanante').value = paciente.apoderado;
 
         if (infoCard) infoCard.classList.remove('hidden');
-        alert(`✅ Paciente cargado con éxito: ${paciente.nombreCompleto}`);
+        mostrarToast(`Paciente cargado: ${paciente.nombreCompleto}`, 'success');
     } else {
-        alert(`❌ No se encontró ningún paciente con DNI: ${dni}.\nPor favor regístrelo previamente en el módulo 'Nuevo Paciente'.`);
+        mostrarAlerta("Paciente No Encontrado", `No se encontró ningún paciente con el DNI ${dni}.\nPor favor regístrelo previamente en el módulo 'Nuevo Paciente'.`, "warning");
         limpiarCamposPacienteF2();
     }
 }
@@ -446,6 +489,21 @@ function limpiarCamposPacienteF2() {
     if (document.getElementById('f2Dni')) document.getElementById('f2Dni').value = "";
     if (document.getElementById('f2NombreCompleto')) document.getElementById('f2NombreCompleto').value = "";
     if (document.getElementById('f2Programa')) document.getElementById('f2Programa').value = "";
+
+    // IRA
+    if (document.getElementById('iraDni')) document.getElementById('iraDni').value = "";
+    if (document.getElementById('iraNombreCompleto')) document.getElementById('iraNombreCompleto').value = "";
+    if (document.getElementById('iraEdad')) document.getElementById('iraEdad').value = "";
+    if (document.getElementById('iraGenero')) document.getElementById('iraGenero').value = "";
+    if (document.getElementById('iraDireccion')) document.getElementById('iraDireccion').value = "";
+
+    // EDA
+    if (document.getElementById('edaDni')) document.getElementById('edaDni').value = "";
+    if (document.getElementById('edaNombreCompleto')) document.getElementById('edaNombreCompleto').value = "";
+    if (document.getElementById('edaEdad')) document.getElementById('edaEdad').value = "";
+    if (document.getElementById('edaGenero')) document.getElementById('edaGenero').value = "";
+    if (document.getElementById('edaDireccion')) document.getElementById('edaDireccion').value = "";
+    if (document.getElementById('edaAcompanante')) document.getElementById('edaAcompanante').value = "";
 
     const infoCard = document.getElementById('pacienteEncontradoInfo');
     if (infoCard) infoCard.classList.add('hidden');
@@ -742,7 +800,7 @@ function evaluarReglasEDA() {
     } 
     else if (estadoHidratacion === 'Deshidratación grave / Shock hipovolémico') {
         if (manejoFluidos) manejoFluidos.value = 'Plan C - Hidratación intravenosa (Emergencia/Observación)';
-        alert("🚨 ¡ALERTA CRÍTICA: DESHIDRATACIÓN GRAVE / SHOCK HIPOVOLÉMICO!\nInicie de inmediato Hidratación Intravenosa de Emergencia (Plan C) y ordene transferencia / evaluación urgente.");
+        mostrarAlerta("🚨 ¡ALERTA CRÍTICA: DESHIDRATACIÓN GRAVE!", "Inicie de inmediato Hidratación Intravenosa de Emergencia (Plan C) y ordene transferencia / evaluación urgente.", "error");
     }
 
     if (manejoFluidos && manejoFluidos.value.includes('Plan A')) {

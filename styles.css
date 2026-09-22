@@ -283,6 +283,12 @@ FICHAS CLÍNICAS Y ELEMENTOS DINÁMICOS
     font-size: 12px;
 }
 
+.form-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
 .form-grid-3 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -477,6 +483,7 @@ DISEÑO ADAPTATIVO (RESPONSIVE)
 @media (max-width: 768px) {
     .form-grid-2,
     .form-grid-3,
+    .form-grid-4,
     .stats-grid {
         grid-template-columns: 1fr;
     }
