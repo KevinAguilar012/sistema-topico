@@ -35,7 +35,7 @@ function mostrarAlerta(titulo, mensaje, icono = 'info') {
             text: mensaje,
             icon: icono,
             confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#2b6cb0'
+            confirmButtonColor: '#2563eb'
         });
     } else {
         alert(`${titulo}\n\n${mensaje}`);
@@ -232,6 +232,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Cargar métricas iniciales
     await actualizarKpiMetrics();
 
+    // Restaurar sesión de la licenciada si existe
+    const sesionGuardada = sessionStorage.getItem('usuarioSesion');
+    if (sesionGuardada) {
+        try {
+            const usrSesion = JSON.parse(sesionGuardada);
+            const nombreLic = usrSesion.displayName || (usrSesion.nombre ? (usrSesion.nombre.toLowerCase().startsWith('lic.') ? usrSesion.nombre : `Lic. ${usrSesion.nombre}`) : `Lic. ${usrSesion.usuario}`);
+            const userLabel = document.getElementById('userDisplayName');
+            if (userLabel) userLabel.innerText = nombreLic;
+
+            document.getElementById('loginView')?.classList.add('hidden');
+            document.getElementById('dashboardView')?.classList.remove('hidden');
+
+            await renderizarTablaBotiquin();
+            await renderizarTablaUsuarios();
+            await actualizarReportesF6();
+            await renderizarTablaF3();
+        } catch (e) {
+            console.error("Error al restaurar sesión:", e);
+        }
+    }
+
     // ------------------------------------------------------------
     // LOGIN
     // ------------------------------------------------------------
@@ -246,10 +267,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const res = await API.usuarios.login(u, p);
                 if (res && !res.error && res.usuario) {
+                    const rawNombre = res.usuario.nombre ? res.usuario.nombre.trim() : u;
+                    const nombreFormateado = rawNombre.toLowerCase().startsWith('lic.') ? rawNombre : `Lic. ${rawNombre}`;
+
                     document.getElementById('loginView').classList.add('hidden');
                     document.getElementById('dashboardView').classList.remove('hidden');
-                    document.getElementById('userDisplayName').innerText = res.usuario.nombre || `Lic. ${u}`;
-                    
+                    document.getElementById('userDisplayName').innerText = nombreFormateado;
+
+                    sessionStorage.setItem('usuarioSesion', JSON.stringify({
+                        ...res.usuario,
+                        displayName: nombreFormateado
+                    }));
+
                     await renderizarTablaBotiquin();
                     await renderizarTablaUsuarios();
                     await actualizarReportesF6();
@@ -279,6 +308,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnLogout) {
         btnLogout.addEventListener('click', (e) => {
             e.preventDefault();
+            sessionStorage.removeItem('usuarioSesion');
             document.getElementById('dashboardView').classList.add('hidden');
             document.getElementById('loginView').classList.remove('hidden');
         });
@@ -705,25 +735,43 @@ function mostrarModalReceta(atencion) {
     }
 
     content.innerHTML = `
-        <div style="border-bottom: 1px dashed #cbd5e0; padding-bottom: 8px; margin-bottom: 8px;">
+        <div style="border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; margin-bottom: 8px;">
             <p><strong>Fecha:</strong> ${atencion.fecha}</p>
             <p><strong>Paciente:</strong> ${atencion.paciente} | <strong>DNI:</strong> ${atencion.dni}</p>
             <p><strong>Área / Programa:</strong> ${atencion.programa}</p>
             <p><strong>Diagnóstico:</strong> ${atencion.diagnostico} (${atencion.subtipo})</p>
         </div>
-        <h4 style="color: #2b6cb0; margin-bottom: 5px;">Prescripción y Recomendaciones:</h4>
+        <h4 style="color: var(--primary); margin-bottom: 5px;">Prescripción y Recomendaciones:</h4>
         ${esquema}
         <p style="margin-top: 10px;"><strong>Tratamiento Administrado en Tópico:</strong> ${atencion.tratamiento || 'Ninguno adicional'}</p>
-        <p style="margin-top: 10px; font-size: 11px; color: #718096; text-align: right;">Atendido por: ${atencion.licenciada}</p>
+        <p style="margin-top: 10px; font-size: 11px; color: var(--text-muted); text-align: right;">Atendido por: ${atencion.licenciada}</p>
     `;
 
     document.getElementById('modalReceta').classList.remove('hidden');
 }
 
-function cerrarModal() {
-    window.print();
-    document.getElementById('modalReceta').classList.add('hidden');
+function cerrarModalReceta() {
+    const modal = document.getElementById('modalReceta');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
 }
+
+function imprimirModal() {
+    window.print();
+    cerrarModalReceta();
+}
+
+function cerrarModal() {
+    cerrarModalReceta();
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        cerrarModalReceta();
+    }
+});
+
 
 // ================================================================
 // 7. TABLA HISTORIAL (FORMULARIO 3)
@@ -736,7 +784,7 @@ async function renderizarTablaF3(datos = null) {
     const lista = datos !== null ? datos : await API.atenciones.listar();
 
     if (!lista || lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #a0aec0; padding: 15px;">No hay registros de atenciones médicas.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 15px;">No hay registros de atenciones médicas.</td></tr>`;
         return;
     }
 
@@ -745,17 +793,22 @@ async function renderizarTablaF3(datos = null) {
 
     lista.forEach((item, index) => {
         const tr = document.createElement('tr');
+        const esOtros = (item.programa || '').includes('Otros') || (item.programa || '').includes('Docentes');
+        const tipoBadge = esOtros 
+            ? `<span class="badge badge-warning" style="font-weight: 600;"><i class="fa-solid fa-user-tie"></i> Docente / Administrativo</span>`
+            : `<span class="badge badge-info" style="font-weight: 600;"><i class="fa-solid fa-user-graduate"></i> Estudiante</span>`;
+
         tr.innerHTML = `
             <td>${item.fecha || ''}</td>
             <td><strong>${item.dni || ''}</strong></td>
             <td>${item.paciente || ''}</td>
             <td>${item.programa || ''}</td>
-            <td><span style="background: #ebf8ff; color: #2b6cb0; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${item.diagnostico || ''}</span></td>
-            <td>${item.temp ? item.temp + ' °C' : '-'}</td>
-            <td>${item.destino || ''}</td>
-            <td>${item.licenciada || ''}</td>
+            <td><span class="badge badge-info">${item.diagnostico || ''}</span></td>
+            <td><span style="font-weight: 500;">${item.subtipo || '-'}</span></td>
+            <td>${tipoBadge}</td>
+            <td><span style="color: var(--primary); font-weight: 600;">${item.licenciada || 'Lic. de Guardia'}</span></td>
             <td>
-                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto; background-color: #3182ce;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
+                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -787,7 +840,7 @@ async function renderizarTablaBotiquin() {
     const listaBotiquin = await API.botiquin.listar();
 
     if (!listaBotiquin || listaBotiquin.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 15px; color: #a0aec0;">Botiquín vacío.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 15px; color: var(--text-muted);">Botiquín vacío.</td></tr>`;
         return;
     }
 
@@ -800,12 +853,17 @@ async function renderizarTablaBotiquin() {
             : `<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Disponible</span>`;
 
         tr.innerHTML = `
-            <td><strong>${item.codigo || `MED-00${item.id}`}</strong></td>
-            <td>${item.nombre || ''}</td>
-            <td><span class="badge badge-info">${item.categoria || 'General'}</span></td>
-            <td style="font-weight: bold; font-size: 13px;">${stock} unidades</td>
-            <td>${item.vencimiento || '-'}</td>
-            <td>${estado}</td>
+            <td>${item.fecha || ''}</td>
+            <td><strong>${item.dni || ''}</strong></td>
+            <td>${item.paciente || ''}</td>
+            <td>${item.programa || ''}</td>
+            <td><span class="badge badge-info">${item.diagnostico || ''}</span></td>
+            <td><span style="font-weight: 500;">${item.subtipo || '-'}</span></td>
+            <td><span class="badge badge-warning" style="font-weight: 600;">${item.programa || 'General'}</span></td>
+            <td><span style="color: var(--primary); font-weight: 600;">${item.licenciada || 'Lic. de Guardia'}</span></td>
+            <td>
+                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -829,17 +887,24 @@ async function renderizarTablaUsuarios() {
     const listaUsuarios = await API.usuarios.listar();
 
     if (!listaUsuarios || listaUsuarios.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 15px; color: #a0aec0;">No hay usuarios registrados.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 15px; color: var(--text-muted);">No hay usuarios registrados.</td></tr>`;
         return;
     }
 
     listaUsuarios.forEach(item => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><strong>${item.nombre || ''}</strong></td>
-            <td>${item.cep || ''}</td>
-            <td><span class="badge badge-info">${item.usuario || ''}</span></td>
-            <td>${item.turno || ''}</td>
+            <td>${item.fecha || ''}</td>
+            <td><strong>${item.dni || ''}</strong></td>
+            <td>${item.paciente || ''}</td>
+            <td>${item.programa || ''}</td>
+            <td><span class="badge badge-info">${item.diagnostico || ''}</span></td>
+            <td><span style="font-weight: 500;">${item.subtipo || '-'}</span></td>
+            <td><span class="badge badge-warning" style="font-weight: 600;">${item.programa || 'General'}</span></td>
+            <td><span style="color: var(--primary); font-weight: 600;">${item.licenciada || 'Lic. de Guardia'}</span></td>
+            <td>
+                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -885,11 +950,18 @@ async function actualizarReportesF6() {
         if (tbody) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${prog}</td>
-                <td style="text-align: center; color: var(--secondary); font-weight: bold;">${cIra}</td>
-                <td style="text-align: center; color: var(--color-warning); font-weight: bold;">${cEda}</td>
-                <td style="text-align: center; font-weight: bold;"><span class="badge badge-info">${cIra + cEda}</span></td>
-            `;
+            <td>${item.fecha || ''}</td>
+            <td><strong>${item.dni || ''}</strong></td>
+            <td>${item.paciente || ''}</td>
+            <td>${item.programa || ''}</td>
+            <td><span class="badge badge-info">${item.diagnostico || ''}</span></td>
+            <td><span style="font-weight: 500;">${item.subtipo || '-'}</span></td>
+            <td><span class="badge badge-warning" style="font-weight: 600;">${item.programa || 'General'}</span></td>
+            <td><span style="color: var(--primary); font-weight: 600;">${item.licenciada || 'Lic. de Guardia'}</span></td>
+            <td>
+                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
+            </td>
+        `;
             tbody.appendChild(tr);
         }
     });
@@ -1018,8 +1090,7 @@ function evaluarReglasEDA() {
 
     const manejoFluidos = document.getElementById('edaManejoFluidos');
     const tratFarmacologico = document.getElementById('edaTratFarmacologico');
-    const alertaDisenteria = document.getElementById('alertaDisenteria');
-    const secConsejeria = document.getElementById('secEdaConsejeria');
+        const secConsejeria = document.getElementById('secEdaConsejeria');
 
     if (estadoHidratacion === 'Sin deshidratación clínica') {
         if (manejoFluidos) manejoFluidos.value = 'Plan A - Hidratación vía oral (Ambulatorio)';
@@ -1034,8 +1105,7 @@ function evaluarReglasEDA() {
 
     if (manejoFluidos && manejoFluidos.value.includes('Plan A')) {
         if (secConsejeria) {
-            secConsejeria.style.border = '2px solid #3182ce';
-            secConsejeria.style.backgroundColor = '#ebf8ff';
+            secConsejeria.classList.add('consejeria-active');
         }
         ['edaPrevManos', 'edaPrevAgua', 'edaPrevAlimentos', 'edaAlarmaPersistencia', 'edaAlarmaSangrado'].forEach(id => {
             const el = document.getElementById(id);
@@ -1043,19 +1113,16 @@ function evaluarReglasEDA() {
         });
     } else {
         if (secConsejeria) {
-            secConsejeria.style.border = '1px solid #e2e8f0';
-            secConsejeria.style.backgroundColor = '#ffffff';
+            secConsejeria.classList.remove('consejeria-active');
         }
     }
 
     if (tipoDiarrea === 'Síndrome disentérico') {
-        if (alertaDisenteria) alertaDisenteria.classList.remove('hidden');
-        if (tratFarmacologico && tratFarmacologico.value === 'Ninguno') {
+                if (tratFarmacologico && tratFarmacologico.value === 'Ninguno') {
             tratFarmacologico.value = 'Antibioticoterapia empírica';
         }
     } else {
-        if (alertaDisenteria) alertaDisenteria.classList.add('hidden');
-    }
+            }
 }
 
 function generarHistoriaF1(dni) {

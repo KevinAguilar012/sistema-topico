@@ -66,11 +66,106 @@ body.dark-mode {
     --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.5);
 
-    --primary-light: rgba(37, 99, 235, 0.2);
-    --bg-success: rgba(22, 163, 74, 0.2);
-    --bg-warning: rgba(217, 119, 6, 0.2);
-    --bg-danger: rgba(220, 38, 38, 0.2);
-    --bg-info: rgba(2, 132, 199, 0.2);
+    --primary-light: rgba(37, 99, 235, 0.25);
+    --bg-success: rgba(22, 163, 74, 0.25);
+    --bg-warning: rgba(217, 119, 6, 0.25);
+    --bg-danger: rgba(220, 38, 38, 0.25);
+    --bg-info: rgba(2, 132, 199, 0.25);
+}
+
+/* Reglas específicas de Modo Oscuro para Elementos e Inputs */
+body.dark-mode select {
+    background-color: var(--bg-input);
+    color: var(--text-main);
+}
+
+body.dark-mode select option {
+    background-color: var(--bg-card);
+    color: var(--text-main);
+}
+
+body.dark-mode .ficha-header h2,
+body.dark-mode .form-section legend,
+body.dark-mode .modal-header h3,
+body.dark-mode .section-title {
+    color: var(--border-focus);
+}
+
+/* Campos de Solo Lectura (Readonly) y Deshabilitados */
+input[readonly], 
+input:disabled, 
+select:disabled, 
+textarea:disabled {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+    color: var(--text-main) !important;
+    opacity: 0.9;
+}
+
+body.dark-mode input[readonly], 
+body.dark-mode input:disabled, 
+body.dark-mode select:disabled, 
+body.dark-mode textarea:disabled {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: var(--text-main) !important;
+}
+
+/* Titulares de sección */
+.section-title {
+    color: var(--primary);
+}
+
+/* Consejería y Signos de Alarma */
+.consejeria-box {
+    background-color: var(--bg-body);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.consejeria-box-title-blue {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--primary);
+    display: block;
+    margin-bottom: 6px;
+}
+
+body.dark-mode .consejeria-box-title-blue {
+    color: var(--border-focus);
+}
+
+.consejeria-box-title-red {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--color-danger);
+    display: block;
+    margin-bottom: 6px;
+}
+
+body.dark-mode .consejeria-box-title-red {
+    color: #fca5a5;
+}
+
+.consejeria-active {
+    border: 2px solid var(--primary) !important;
+    background-color: var(--primary-light) !important;
+}
+
+/* Alerta Disentería */
+.alert-disenteria {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: var(--bg-danger);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: var(--radius-sm);
+    color: var(--color-danger);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+body.dark-mode .alert-disenteria {
+    color: #fca5a5;
 }
 
 /* Base resets */
@@ -809,12 +904,45 @@ body {
     color: var(--text-main);
 }
 
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+}
+
 .modal-header h3 {
     color: var(--primary);
     font-size: 16px;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 10px;
     font-family: 'Plus Jakarta Sans', sans-serif;
+    margin: 0;
+}
+
+.btn-close-modal {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.btn-close-modal:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    color: var(--text-main);
+}
+
+body.dark-mode .btn-close-modal:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
 }
 
 .modal-body {
@@ -824,9 +952,42 @@ body {
 }
 
 .modal-footer {
-    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
     border-top: 1px solid var(--border-color);
     padding-top: 12px;
+}
+
+.modal-footer .btn-primary,
+.modal-footer .btn-secondary {
+    width: auto;
+}
+
+.btn-secondary {
+    padding: 10px 18px;
+    background-color: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-secondary:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-color: var(--text-muted);
+}
+
+body.dark-mode .btn-secondary {
+    color: var(--text-main);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* RESPONSIVE DESIGN */
@@ -854,7 +1015,7 @@ body {
     #modalReceta {
         position: absolute; left: 0; top: 0; background: none; width: 100%; height: auto;
     }
-    .modal-footer { display: none; }
+    .modal-footer, .btn-close-modal { display: none !important; }
 }
 
 #f2BuscarDni, #f1Dni, #f2Dni, #iraDni, #edaDni, #f5Dni, #f1ApoDni, #f1Telefono, #f1ApoTelefono {
