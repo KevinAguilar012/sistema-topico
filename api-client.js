@@ -1,18 +1,71 @@
 // ================================================================
-// SISTEMA INTEGRAL DEL TÓPICO - CLIENTE API (FRONTEND <-> BACKEND NODE.JS)
-// Conexión REST exclusiva hacia el Servidor Node.js + Express + MySQL
-// en http://localhost:3000/api
+// SISTEMA INTEGRAL DEL TÓPICO - CLIENTE API (FRONTEND <-> BACKEND)
+// Soporta tanto Servidor Node.js + Express como PHP Fallback
 // ================================================================
 
 const ApiConfig = {
-    // URL base del servidor Node.js + Express
+    // URL base del servidor (Node.js Express o PHP)
     obtenerBaseUrl() {
-        if (window.location.origin.includes(':3000')) {
-            return `${window.location.origin}/api`;
+        const origin = window.location.origin;
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = window.location.port;
+
+        // Si se abre directamente el archivo HTML (file://)
+        if (protocol === 'file:') {
+            return 'http://localhost:3000/api';
         }
-        return 'http://localhost:3000/api';
+        // Si estamos en localhost/127.0.0.1 y el puerto no es el 3000 (ej. XAMPP en 80, Live Server en 5500)
+        if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '3000') {
+            return 'http://localhost:3000/api';
+        }
+        return `${origin}/api`;
     }
 };
+
+/**
+ * Realiza peticiones HTTP de forma segura procesando JSON y capturando respuestas vacías o no válidas
+ */
+async function safeFetchJson(url, options = {}) {
+    let res;
+    try {
+        res = await fetch(url, options);
+    } catch (netErr) {
+        // Fallback si falla la conexión y no se usaba la extensión .php
+        if (!url.includes('.php') && window.location.protocol !== 'file:') {
+            const phpUrl = url.replace(/\/api\/([^?#]+)/, '/api/$1.php');
+            try {
+                res = await fetch(phpUrl, options);
+            } catch (e) {
+                throw netErr;
+            }
+        } else {
+            throw netErr;
+        }
+    }
+
+    if (!res.ok && res.status === 404 && !url.includes('.php')) {
+        const phpUrl = url.replace(/\/api\/([^?#]+)/, '/api/$1.php');
+        try {
+            const resPhp = await fetch(phpUrl, options);
+            if (resPhp.ok || resPhp.status !== 404) {
+                res = resPhp;
+            }
+        } catch (e) {}
+    }
+
+    const text = await res.text();
+    if (!text || !text.trim()) {
+        return { error: true, mensaje: "El servidor devolvió una respuesta vacía. Verifique que la API esté en ejecución." };
+    }
+
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        console.error("Respuesta no válida del servidor:", text);
+        return { error: true, mensaje: `Respuesta no válida del servidor (HTTP ${res.status}).` };
+    }
+}
 
 const API = {
     // ------------------------------------------------------------
@@ -25,12 +78,10 @@ const API = {
          */
         async listar() {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/usuarios`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
-                return json.error ? [] : json.datos;
+                const json = await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/usuarios`);
+                return (json && !json.error && Array.isArray(json.datos)) ? json.datos : [];
             } catch (e) {
-                console.warn("Error al listar usuarios desde la API Node.js:", e);
+                console.warn("Error al listar usuarios desde la API:", e);
                 return [];
             }
         },
@@ -41,15 +92,14 @@ const API = {
          */
         async login(usuario, pass) {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/usuarios`, {
+                return await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/usuarios`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'login', usuario, pass })
                 });
-                return await res.json();
             } catch (e) {
-                console.warn("Error al autenticar en API Node.js:", e);
-                return { error: true, mensaje: e.message || "Error de red al autenticar." };
+                console.warn("Error al autenticar en la API:", e);
+                return { error: true, mensaje: e.message || "Error de conexión con el servidor." };
             }
         },
 
@@ -59,15 +109,14 @@ const API = {
          */
         async registrar(datos) {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/usuarios`, {
+                return await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/usuarios`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datos)
                 });
-                return await res.json();
             } catch (e) {
-                console.warn("Error al registrar usuario en API Node.js:", e);
-                return { error: true, mensaje: e.message || "Error de red al registrar usuario." };
+                console.warn("Error al registrar usuario en la API:", e);
+                return { error: true, mensaje: e.message || "Error de conexión con el servidor." };
             }
         }
     },
@@ -82,12 +131,10 @@ const API = {
          */
         async listar() {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/pacientes`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
-                return json.error ? [] : json.datos;
+                const json = await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/pacientes`);
+                return (json && !json.error && Array.isArray(json.datos)) ? json.datos : [];
             } catch (e) {
-                console.warn("Error al listar pacientes desde API Node.js:", e);
+                console.warn("Error al listar pacientes desde la API:", e);
                 return [];
             }
         },
@@ -98,18 +145,13 @@ const API = {
          */
         async buscarPorDni(dni) {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/pacientes/${encodeURIComponent(dni)}`);
-                if (res.status === 404) {
-                    console.log(`Paciente DNI ${dni} no encontrado (404).`);
-                    return null;
+                const json = await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/pacientes/${encodeURIComponent(dni)}`);
+                if (json && json.encontrado && json.paciente) {
+                    return json.paciente;
                 }
-                if (!res.ok) {
-                    throw new Error(`Respuesta HTTP de error: ${res.status}`);
-                }
-                const json = await res.json();
-                return json.encontrado ? json.paciente : null;
+                return null;
             } catch (e) {
-                console.warn("Error al buscar paciente por DNI en API Node.js:", e);
+                console.warn("Error al buscar paciente por DNI en la API:", e);
                 return null;
             }
         },
@@ -120,19 +162,14 @@ const API = {
          */
         async registrar(datosPaciente) {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/pacientes`, {
+                return await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/pacientes`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datosPaciente)
                 });
-                const json = await res.json();
-                if (!res.ok) {
-                    return { error: true, mensaje: json.mensaje || `Error HTTP ${res.status}` };
-                }
-                return json;
             } catch (e) {
-                console.warn("Error al registrar paciente en API Node.js:", e);
-                return { error: true, mensaje: e.message || "Error de red al registrar paciente." };
+                console.warn("Error al registrar paciente en la API:", e);
+                return { error: true, mensaje: e.message || "Error de conexión al registrar paciente." };
             }
         }
     },
@@ -151,12 +188,10 @@ const API = {
                 if (filtroDni) params.append('dni', filtroDni);
                 if (filtroDiag && filtroDiag !== 'TODOS') params.append('diagnostico', filtroDiag);
 
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/atenciones?${params.toString()}`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
-                return json.error ? [] : json.datos;
+                const json = await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/atenciones?${params.toString()}`);
+                return (json && !json.error && Array.isArray(json.datos)) ? json.datos : [];
             } catch (e) {
-                console.warn("Error al listar atenciones desde API Node.js:", e);
+                console.warn("Error al listar atenciones desde la API:", e);
                 return [];
             }
         },
@@ -167,19 +202,14 @@ const API = {
          */
         async registrar(datosAtencion) {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/atenciones`, {
+                return await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/atenciones`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datosAtencion)
                 });
-                const json = await res.json();
-                if (!res.ok) {
-                    return { error: true, mensaje: json.mensaje || `Error HTTP ${res.status}` };
-                }
-                return json;
             } catch (e) {
-                console.warn("Error al guardar atención en API Node.js:", e);
-                return { error: true, mensaje: e.message || "Error de red al registrar atención." };
+                console.warn("Error al guardar atención en la API:", e);
+                return { error: true, mensaje: e.message || "Error de conexión al registrar atención." };
             }
         }
     },
@@ -194,12 +224,10 @@ const API = {
          */
         async listar() {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/botiquin`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
-                return json.error ? [] : json.datos;
+                const json = await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/botiquin`);
+                return (json && !json.error && Array.isArray(json.datos)) ? json.datos : [];
             } catch (e) {
-                console.warn("Error al listar botiquín desde API Node.js:", e);
+                console.warn("Error al listar botiquín desde la API:", e);
                 return [];
             }
         },
@@ -210,15 +238,14 @@ const API = {
          */
         async agregarOActualizar(datosMedicamento) {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/botiquin`, {
+                return await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/botiquin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datosMedicamento)
                 });
-                return await res.json();
             } catch (e) {
-                console.warn("Error al registrar medicamento en API Node.js:", e);
-                return { error: true, mensaje: e.message || "Error de red al registrar medicamento." };
+                console.warn("Error al registrar medicamento en la API:", e);
+                return { error: true, mensaje: e.message || "Error de conexión al registrar medicamento." };
             }
         },
 
@@ -228,15 +255,14 @@ const API = {
          */
         async descontar(codigo, cantidad = 1) {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/botiquin/descontar`, {
+                return await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/botiquin/descontar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ codigo, cantidad })
                 });
-                return await res.json();
             } catch (e) {
-                console.warn("Error al descontar stock en API Node.js:", e);
-                return { error: true, mensaje: e.message || "Error de red al descontar stock." };
+                console.warn("Error al descontar stock en la API:", e);
+                return { error: true, mensaje: e.message || "Error de conexión al descontar stock." };
             }
         }
     },
@@ -251,15 +277,14 @@ const API = {
          */
         async registrar(datosDerivacion) {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/derivaciones`, {
+                return await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/derivaciones`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datosDerivacion)
                 });
-                return await res.json();
             } catch (e) {
-                console.warn("Error al registrar derivación en API Node.js:", e);
-                return { error: true, mensaje: e.message || "Error de red al registrar derivación." };
+                console.warn("Error al registrar derivación en la API:", e);
+                return { error: true, mensaje: e.message || "Error de conexión al registrar derivación." };
             }
         }
     },
@@ -274,12 +299,10 @@ const API = {
          */
         async obtenerEstadisticas() {
             try {
-                const res = await fetch(`${ApiConfig.obtenerBaseUrl()}/reportes`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
-                return json.error ? null : json.estadisticas;
+                const json = await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/reportes`);
+                return (json && !json.error && json.estadisticas) ? json.estadisticas : null;
             } catch (e) {
-                console.warn("Error al obtener reportes desde API Node.js:", e);
+                console.warn("Error al obtener reportes desde la API:", e);
                 return null;
             }
         }
