@@ -45,13 +45,26 @@ async function safeFetchJson(url, options = {}) {
     }
 
     if (!res.ok && res.status === 404 && !url.includes('.php')) {
-        const phpUrl = url.replace(/\/api\/([^?#]+)/, '/api/$1.php');
+        // Verificar si el 404 es una respuesta válida del negocio (ej. paciente no encontrado)
+        // o si realmente el endpoint no existe (debería intentar PHP)
+        const cloned = res.clone();
+        let esRespuestaNegocio = false;
         try {
-            const resPhp = await fetch(phpUrl, options);
-            if (resPhp.ok || resPhp.status !== 404) {
-                res = resPhp;
+            const json = await cloned.json();
+            if (json && typeof json === 'object') {
+                esRespuestaNegocio = true;
             }
         } catch (e) {}
+
+        if (!esRespuestaNegocio) {
+            const phpUrl = url.replace(/\/api\/([^?#]+)/, '/api/$1.php');
+            try {
+                const resPhp = await fetch(phpUrl, options);
+                if (resPhp.ok || resPhp.status !== 404) {
+                    res = resPhp;
+                }
+            } catch (e) {}
+        }
     }
 
     const text = await res.text();
