@@ -41,7 +41,7 @@ if ($metodo === 'GET') {
                     dist.nombre AS distrito,
                     prov.nombre AS provincia,
                     dep.nombre AS departamento,
-                    COALESCE(c.nombre_carrera, 'Enfermería Técnica') AS programa,
+                    COALESCE(c.nombre_carrera, 'Otros (Docentes, Administrativos)') AS programa,
                     COALESCE(CONCAT('HC-', hc.numero_historia_clinica), CONCAT('HC-', p.dni)) AS historia_clinica,
                     hc.fecha_apertura AS fecha_registro
                 FROM persona p
@@ -140,10 +140,18 @@ if ($metodo === 'POST') {
         $stmtHc = $db->prepare("INSERT INTO historia_clinica (numero_historia_clinica, fecha_apertura, estado, persona_idpersona) VALUES (:num, CURDATE(), 'ACTIVA', :pers)");
         $stmtHc->execute([':num' => $numHist, ':pers' => $personaId]);
 
-        // Insertar estudiante
-        $carreraId = (strpos($programa, 'Arquitectura') !== false || strpos($programa, 'Tecnologías') !== false) ? 2 : 1;
-        $stmtEst = $db->prepare("INSERT INTO estudiante (periodo_academico, carrera_idcarrera, persona_idpersona, tipo_apoderado_idtipo_apoderado) VALUES ('2026-I', :car, :pers, 1)");
-        $stmtEst->execute([':car' => $carreraId, ':pers' => $personaId]);
+        // Insertar estudiante si corresponde
+        $carreraId = null;
+        if (strpos($programa, 'Enfermería') !== false) {
+            $carreraId = 1;
+        } else if (strpos($programa, 'Arquitectura') !== false || strpos($programa, 'Tecnologías') !== false || strpos($programa, 'TI') !== false) {
+            $carreraId = 2;
+        }
+
+        if ($carreraId !== null) {
+            $stmtEst = $db->prepare("INSERT INTO estudiante (periodo_academico, carrera_idcarrera, persona_idpersona, tipo_apoderado_idtipo_apoderado) VALUES ('2026-I', :car, :pers, 1)");
+            $stmtEst->execute([':car' => $carreraId, ':pers' => $personaId]);
+        }
 
         $db->commit();
 

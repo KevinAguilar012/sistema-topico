@@ -88,6 +88,78 @@ function togglePasswordVisibility(inputId, btnEl) {
     }
 }
 
+// ================================================================
+// RESTRICCIÓN EN TIEMPO REAL: SOLO NÚMEROS EN CAMPOS DNI Y TELÉFONO/CELULAR
+// ================================================================
+function restringirASoloNumeros(input) {
+    if (!input || input._hasNumericRestriction) return;
+    input._hasNumericRestriction = true;
+
+    const limpiar = () => {
+        const val = input.value;
+        const limpio = val.replace(/\D/g, ''); // Reemplaza todo lo que NO sea dígito [0-9]
+        if (val !== limpio) {
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const diff = val.length - limpio.length;
+            input.value = limpio;
+            if (start !== null && end !== null) {
+                const newPos = Math.max(0, start - diff);
+                input.setSelectionRange(newPos, newPos);
+            }
+        }
+    };
+
+    // Bloquear teclas no numéricas en keydown (para evitar escritura de letras/signos)
+    input.addEventListener('keydown', (e) => {
+        // Permitir atajos con Ctrl / Cmd (Ctrl+C, Ctrl+V, Ctrl+A, etc.)
+        if (e.ctrlKey || e.metaKey || e.altKey) {
+            return;
+        }
+
+        // Permitir teclas de navegación y edición
+        const teclasNavegacion = [
+            'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+            'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+            'Home', 'End', 'PageUp', 'PageDown'
+        ];
+        if (teclasNavegacion.includes(e.key)) {
+            return;
+        }
+
+        // Si la tecla presionada no es un número [0-9], cancelamos la escritura
+        if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+
+    // Sanitización inmediata para paste (pegado), teclados móviles, autocompletado, drag&drop, etc.
+    input.addEventListener('input', limpiar);
+    input.addEventListener('paste', () => setTimeout(limpiar, 0));
+}
+
+function inicializarRestriccionNumerica() {
+    const ids = [
+        'f1Dni',
+        'f1Telefono',
+        'f1ApoDni',
+        'f1ApoTelefono',
+        'f2BuscarDni',
+        'f5Dni'
+    ];
+
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            restringirASoloNumeros(el);
+        }
+    });
+
+    document.querySelectorAll('input[data-solo-numeros="true"], input.solo-numeros').forEach(input => {
+        restringirASoloNumeros(input);
+    });
+}
+
 async function actualizarKpiMetrics() {
     try {
         const atenciones = (typeof API !== 'undefined' && API.atenciones) ? await API.atenciones.listar() : [];
@@ -237,6 +309,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Autoasignar fecha y hora actual en los formularios
     actualizarFechasHorasAtencion();
+
+    // Restringir campos de DNI y teléfono a solo números
+    inicializarRestriccionNumerica();
 
     // Establecer estado visual de la base de datos
     actualizarEstadoUI(true);
@@ -536,18 +611,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ------------------------------------------------------------
-    // FORMULARIO 5: DERIVACIÓN Y REFERENCIAS
+    // FORMULARIO 5: DERIVACIÓN Y REFERENCIAS EXTERNAS
     // ------------------------------------------------------------
     const formF5 = document.getElementById('formF5Derivacion');
     if (formF5) {
         formF5.addEventListener('submit', async (e) => {
             e.preventDefault();
             const dni = document.getElementById('f5Dni').value.trim();
-            const pacBD = await API.pacientes.buscarPorDni(dni);
-            const nom = pacBD ? `${pacBD.ape_paterno || pacBD.apePaterno || ''} ${pacBD.nombres || ''}`.trim() : `DNI ${dni}`;
+            if (!dni) {
+                mostrarToast("Por favor ingrese un número de DNI para la derivación.", "warning");
+                return;
+            }
+
+            // Cargar datos del paciente y triaje si aún no han sido buscados
+            if (!window._pacienteDerivacionActual || window._pacienteDerivacionActual.dni !== dni) {
+                await buscarPacienteF5();
+            }
+
+            const pacData = window._pacienteDerivacionActual || {};
+            const pacBD = pacData.pacBD;
+            const nom = pacData.nomComp || (pacBD ? `${pacBD.ape_paterno || ''} ${pacBD.nombres || ''}`.trim() : `DNI ${dni}`);
+            const hc = pacData.hc || `HC-${dni}`;
+            const edad = pacData.edad || 'S/D';
             const destino = document.getElementById('f5Establecimiento').value;
+            const prioridad = document.getElementById('f5Prioridad')?.value || 'Urgencia Médica';
+            const medioTraslado = document.getElementById('f5MedioTraslado')?.value || 'Particular / Vehículo';
             const motivo = document.getElementById('f5Motivo').value;
-            const acomp = document.getElementById('f5Acompanante')?.value || '';
+            const acomp = document.getElementById('f5Acompanante')?.value || pacData.acompTexto || '';
 
             const res = await API.derivaciones.registrar({
                 dni,
@@ -563,8 +653,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            mostrarAlerta("🚑 Ficha de Referencia Generada", `Paciente: ${nom}\nDestino: ${destino}\nMotivo: ${motivo}`, "success");
+            mostrarToast("Ficha de derivación externa registrada correctamente.", "success");
+
+            // Abrir Modal Oficial con la Hoja de Referencia e Impresión
+            mostrarModalDerivacion({
+                dni,
+                nomComp: nom,
+                hc,
+                edad,
+                destino,
+                prioridad,
+                medioTraslado,
+                motivo,
+                acomp,
+                pacBD,
+                ultimaAtencion: pacData.ultimaAtencion
+            });
+
             formF5.reset();
+            limpiarCamposPacienteF5();
         });
     }
 
@@ -590,7 +697,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             mostrarToast(`Personal ${usr.nombre} (${usr.usuario}) registrado con éxito.`, 'success');
-            formF7.reset();
+            limpiarFormularioF7();
             await renderizarTablaUsuarios();
         });
     }
@@ -895,9 +1002,193 @@ function cerrarModal() {
     cerrarModalReceta();
 }
 
+// ================================================================
+// 6.B BÚSQUEDA Y MODAL DE DERIVACIÓN EXTERNA (FORMULARIO 5)
+// ================================================================
+async function buscarPacienteF5() {
+    const dni = document.getElementById('f5Dni').value.trim();
+    if (!dni) {
+        mostrarToast("Por favor ingrese un número de DNI para la búsqueda.", "warning");
+        return;
+    }
+
+    try {
+        const pacBD = await API.pacientes.buscarPorDni(dni);
+        if (!pacBD) {
+            mostrarAlerta("Paciente No Encontrado", `No se encontró ningún paciente registrado con el DNI ${dni}.\nPor favor regístrelo previamente en 'Nuevo Paciente'.`, "warning");
+            limpiarCamposPacienteF5();
+            return;
+        }
+
+        const apeMat = (pacBD.ape_materno || pacBD.apeMaterno) ? ` ${pacBD.ape_materno || pacBD.apeMaterno}` : '';
+        const nomComp = `${pacBD.ape_paterno || pacBD.apePaterno || ''}${apeMat}, ${pacBD.nombres || ''}`;
+        const hc = pacBD.historia_clinica || `HC-${pacBD.dni}`;
+        const edad = pacBD.edad ? `${pacBD.edad} años` : 'S/D';
+        const apoderadoNom = typeof pacBD.apoderado === 'object' ? (pacBD.apoderado?.nombres || '') : (pacBD.apoderado || '');
+        const apoderadoTel = typeof pacBD.apoderado === 'object' ? (pacBD.apoderado?.telefono || '') : '';
+        const acompTexto = apoderadoNom ? `${apoderadoNom}${apoderadoTel ? ' (Tel: ' + apoderadoTel + ')' : ''}` : '';
+
+        // Buscar última atención médica en Formulario 2
+        const atenciones = await API.atenciones.listar(dni);
+        const ultimaAtencion = (atenciones && atenciones.length > 0) ? atenciones[0] : null;
+
+        // Guardar referencia global del paciente y atención
+        window._pacienteDerivacionActual = {
+            dni,
+            pacBD,
+            nomComp,
+            hc,
+            edad,
+            acompTexto,
+            ultimaAtencion
+        };
+
+        // Rellenar campos de la tarjeta informativa
+        const elNom = document.getElementById('f5NombreCompleto');
+        const elProg = document.getElementById('f5Programa');
+        const elEdad = document.getElementById('f5EdadHc');
+        if (elNom) elNom.value = nomComp;
+        if (elProg) elProg.value = pacBD.programa || 'Enfermería Técnica';
+        if (elEdad) elEdad.value = `${edad} | ${hc}`;
+
+        if (ultimaAtencion) {
+            const elDiag = document.getElementById('f5UltimoDiag');
+            const elVit = document.getElementById('f5SignosVitales');
+            const elTrat = document.getElementById('f5TratamientoInicial');
+            if (elDiag) elDiag.value = `${ultimaAtencion.diagnostico} (${ultimaAtencion.subtipo || 'General'})`;
+            if (elVit) elVit.value = `Temp: ${ultimaAtencion.temp || '36.5'}°C | FC: ${ultimaAtencion.fc || '-'} ppm | SatO2: ${ultimaAtencion.spo2 || '-'}%`;
+            if (elTrat) elTrat.value = ultimaAtencion.tratamiento || 'Atención en Tópico';
+
+            const motivoEl = document.getElementById('f5Motivo');
+            if (motivoEl && !motivoEl.value) {
+                motivoEl.value = `Paciente requiere atención de mayor complejidad por diagnóstico de ${ultimaAtencion.diagnostico} (${ultimaAtencion.subtipo || 'Atención de Urgencia'}). Se traslada para evaluación médica y exámenes auxiliares.`;
+            }
+        } else {
+            const elDiag = document.getElementById('f5UltimoDiag');
+            const elVit = document.getElementById('f5SignosVitales');
+            const elTrat = document.getElementById('f5TratamientoInicial');
+            if (elDiag) elDiag.value = "Sin atenciones previas registradas";
+            if (elVit) elVit.value = "N/A";
+            if (elTrat) elTrat.value = "Primeros Auxilios de Tópico";
+        }
+
+        const acompInput = document.getElementById('f5Acompanante');
+        if (acompInput && acompTexto && !acompInput.value) {
+            acompInput.value = acompTexto;
+        }
+
+        const infoCard = document.getElementById('pacienteDerivacionInfo');
+        if (infoCard) infoCard.classList.remove('hidden');
+
+        mostrarToast("Datos del paciente y triaje integrados correctamente.");
+    } catch (e) {
+        console.error("Error al buscar paciente para derivación:", e);
+        mostrarToast("Error al cargar los datos del paciente.", "error");
+    }
+}
+
+function limpiarCamposPacienteF5() {
+    window._pacienteDerivacionActual = null;
+    ['f5NombreCompleto', 'f5Programa', 'f5EdadHc', 'f5UltimoDiag', 'f5SignosVitales', 'f5TratamientoInicial'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+    const infoCard = document.getElementById('pacienteDerivacionInfo');
+    if (infoCard) infoCard.classList.add('hidden');
+}
+
+function mostrarModalDerivacion(datos) {
+    const content = document.getElementById('modalDerivacionContent');
+    if (!content) return;
+
+    const fechaHoy = new Date().toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' });
+    const p = datos.pacBD || {};
+    const at = datos.ultimaAtencion || {};
+    const licenciada = document.getElementById('userDisplayName')?.innerText || 'Lic. Enfermería - Tópico IESTP Carhuaz';
+
+    content.innerHTML = `
+        <div style="border: 2px solid var(--primary); padding: 14px; border-radius: 8px; font-family: sans-serif; background: #ffffff; color: #1e293b;">
+            <div style="text-align: center; border-bottom: 2px solid #0f766e; padding-bottom: 8px; margin-bottom: 12px;">
+                <h3 style="margin: 0; color: #0f766e; font-size: 16px; text-transform: uppercase;">IESTP CARHUAZ - TÓPICO INSTITUCIONAL</h3>
+                <p style="margin: 2px 0 0 0; font-weight: bold; font-size: 14px; color: #1e293b;">HOJA DE REFERENCIA Y DERIVACIÓN EXTERNA</p>
+                <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">N.° Ref: REF-${Date.now().toString().slice(-6)} | Fecha/Hora: ${fechaHoy}</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; background: #f8fafc; padding: 8px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
+                <div><strong>Establecimiento Origen:</strong> Tópico IESTP Carhuaz</div>
+                <div><strong>Establecimiento Destino:</strong> <span style="color: #0f766e; font-weight: bold;">${datos.destino}</span></div>
+                <div><strong>Prioridad / Urgencia:</strong> ${datos.prioridad}</div>
+                <div><strong>Medio de Traslado:</strong> ${datos.medioTraslado}</div>
+            </div>
+
+            <fieldset style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; margin-bottom: 10px;">
+                <legend style="font-weight: bold; color: #0f766e; font-size: 12px; padding: 0 4px;">I. Datos de Identificación del Paciente</legend>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px;">
+                    <div><strong>DNI:</strong> ${datos.dni}</div>
+                    <div><strong>N.° Historia Clínica:</strong> ${datos.hc}</div>
+                    <div><strong>Paciente:</strong> ${datos.nomComp}</div>
+                    <div><strong>Programa / Condición:</strong> ${p.programa || 'Enfermería Técnica'}</div>
+                    <div><strong>Edad / Género:</strong> ${datos.edad} | ${p.genero || 'No precisa'}</div>
+                    <div><strong>Teléfono:</strong> ${p.telefono || 'Sin teléfono registrado'}</div>
+                </div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; margin-bottom: 10px;">
+                <legend style="font-weight: bold; color: #0f766e; font-size: 12px; padding: 0 4px;">II. Evaluación Clínica y Triaje (Tópico)</legend>
+                <div style="font-size: 12px; margin-bottom: 6px;">
+                    <strong>Diagnóstico Presuntivo / Eval.:</strong> <span style="font-weight: bold; color: #b91c1c;">${at.diagnostico ? (at.diagnostico + ' (' + (at.subtipo || 'General') + ')') : 'Evaluación General de Urgencia'}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; font-size: 11px; background: #eff6ff; padding: 6px; border-radius: 4px; border: 1px solid #bfdbfe; margin-bottom: 6px;">
+                    <div><strong>Temp:</strong> ${at.temp || '36.5'}°C</div>
+                    <div><strong>F. Cardíaca:</strong> ${at.fc || '-'} ppm</div>
+                    <div><strong>F. Resp:</strong> ${at.fr || '-'} rpm</div>
+                    <div><strong>SatO₂:</strong> ${at.spo2 || '-'}%</div>
+                </div>
+                <div style="font-size: 12px; margin-bottom: 4px;">
+                    <strong>Motivo de Derivación:</strong> ${datos.motivo}
+                </div>
+                <div style="font-size: 12px;">
+                    <strong>Tratamiento Inicial Administrado:</strong> ${at.tratamiento || 'Atención de primeros auxilios en Tópico'}
+                </div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; margin-bottom: 12px;">
+                <legend style="font-weight: bold; color: #0f766e; font-size: 12px; padding: 0 4px;">III. Notificación y Acompañamiento</legend>
+                <div style="font-size: 12px;">
+                    <strong>Familiar / Responsable Notificado:</strong> ${datos.acomp || 'Familiar / Responsable notificado'}
+                </div>
+            </fieldset>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+                <div style="font-size: 11px; color: #64748b;">
+                    <p style="margin: 0;">IESTP Carhuaz - Tópico Institucional</p>
+                    <p style="margin: 2px 0 0 0;">Carhuaz, Áncash, Perú</p>
+                </div>
+                <div style="text-align: center; border-top: 1px solid #334155; width: 220px; padding-top: 4px;">
+                    <p style="margin: 0; font-size: 12px; font-weight: bold;">${licenciada}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">Licenciada en Enfermería</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('modalDerivacion').classList.remove('hidden');
+}
+
+function cerrarModalDerivacion() {
+    const modal = document.getElementById('modalDerivacion');
+    if (modal) modal.classList.add('hidden');
+}
+
+function imprimirModalDerivacion() {
+    window.print();
+    cerrarModalDerivacion();
+}
+
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         cerrarModalReceta();
+        cerrarModalDerivacion();
     }
 });
 
@@ -1030,6 +1321,18 @@ async function renderizarTablaUsuarios() {
 // ================================================================
 // 10. REPORTES Y VIGILANCIA MINSA (FORMULARIO 6)
 // ================================================================
+function normalizarNombrePrograma(prog) {
+    if (!prog) return "Otros (Docentes, Administrativos)";
+    const p = String(prog).toLowerCase().trim();
+    if (p.includes("enfermer")) {
+        return "Enfermería Técnica";
+    }
+    if (p.includes("arquitectura") || p.includes("tecnolog") || p.includes("plataforma") || p.includes("t.i") || p.includes("ti")) {
+        return "Arquitectura de Plataformas y Servicios de Tecnologías de la Información";
+    }
+    return "Otros (Docentes, Administrativos)";
+}
+
 async function actualizarReportesF6() {
     const atenciones = await API.atenciones.listar();
 
@@ -1044,20 +1347,36 @@ async function actualizarReportesF6() {
     if (cntEda) cntEda.innerText = edas;
     if (cntTotal) cntTotal.innerText = atenciones.length;
 
-    const programas = [
+    const programaKeys = [
         "Enfermería Técnica",
         "Arquitectura de Plataformas y Servicios de Tecnologías de la Información",
         "Otros (Docentes, Administrativos)"
     ];
 
+    const conteos = {
+        "Enfermería Técnica": { iras: 0, edas: 0 },
+        "Arquitectura de Plataformas y Servicios de Tecnologías de la Información": { iras: 0, edas: 0 },
+        "Otros (Docentes, Administrativos)": { iras: 0, edas: 0 }
+    };
+
+    (atenciones || []).forEach(at => {
+        const progNorm = normalizarNombrePrograma(at.programa);
+        if (conteos[progNorm]) {
+            if (at.diagnostico === 'IRA') {
+                conteos[progNorm].iras++;
+            } else if (at.diagnostico === 'EDA') {
+                conteos[progNorm].edas++;
+            }
+        }
+    });
+
     const datosProgramas = [];
     const tbody = document.getElementById('f6TablaProgramas');
     if (tbody) tbody.innerHTML = "";
 
-    programas.forEach(prog => {
-        const esOtros = prog.startsWith('Otros');
-        const cIra = atenciones.filter(x => x.diagnostico === 'IRA' && (x.programa === prog || (esOtros && (x.programa || '').startsWith('Otros')))).length;
-        const cEda = atenciones.filter(x => x.diagnostico === 'EDA' && (x.programa === prog || (esOtros && (x.programa || '').startsWith('Otros')))).length;
+    programaKeys.forEach(prog => {
+        const cIra = conteos[prog].iras;
+        const cEda = conteos[prog].edas;
 
         datosProgramas.push({
             programa: prog,
@@ -1238,9 +1557,14 @@ function evaluarReglasEDA() {
 }
 
 function generarHistoriaF1(dni) {
+    const dniLimpio = (dni || '').replace(/\D/g, '');
+    const inputF1Dni = document.getElementById('f1Dni');
+    if (inputF1Dni && inputF1Dni.value !== dniLimpio) {
+        inputF1Dni.value = dniLimpio;
+    }
     const numHist = document.getElementById('f1NumHistoria');
     if (numHist) {
-        numHist.value = dni.length > 0 ? `HC-${dni}` : '';
+        numHist.value = dniLimpio.length > 0 ? `HC-${dniLimpio}` : '';
     }
 }
 
@@ -1304,4 +1628,18 @@ function limpiarFormularioF2() {
     if (iraFecha) iraFecha.value = obtenerFechaHoraActualISO();
     const edaFecha = document.getElementById('edaFechaHora');
     if (edaFecha) edaFecha.value = obtenerFechaHoraActualISO();
+}
+
+function limpiarFormularioF7() {
+    const formF7 = document.getElementById('formF7Usuario');
+    if (formF7) formF7.reset();
+
+    const ids = ['f7Nombre', 'f7Cep', 'f7User', 'f7Pass'];
+    ids.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+
+    const turno = document.getElementById('f7Turno');
+    if (turno) turno.selectedIndex = 0;
 }

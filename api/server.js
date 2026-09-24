@@ -121,7 +121,7 @@ async function buscarPacientePorDniOrId(term, res) {
                 dist.nombre AS distrito,
                 prov.nombre AS provincia,
                 dep.nombre AS departamento,
-                COALESCE(c.nombre_carrera, 'Enfermería Técnica') AS programa,
+                COALESCE(c.nombre_carrera, 'Otros (Docentes, Administrativos)') AS programa,
                 COALESCE(CONCAT('HC-', hc.numero_historia_clinica), CONCAT('HC-', p.dni)) AS historia_clinica
             FROM persona p
             LEFT JOIN direccion d ON p.direccion_iddireccion = d.iddireccion
@@ -222,15 +222,20 @@ app.post('/api/pacientes', async (req, res) => {
             [numHist, personaId]
         ).catch(err => console.warn("Aviso al insertar historia clínica:", err.message));
 
-        // 5. Insertar Estudiante si corresponde
-        let carreraId = 1;
-        if (programa.includes('Arquitectura') || programa.includes('Tecnologías')) {
+        // 5. Insertar Estudiante si corresponde (solo para programas de estudiantes)
+        let carreraId = null;
+        if (programa.includes('Enfermería')) {
+            carreraId = 1;
+        } else if (programa.includes('Arquitectura') || programa.includes('Tecnologías') || programa.includes('TI')) {
             carreraId = 2;
         }
-        await query(
-            "INSERT INTO estudiante (periodo_academico, carrera_idcarrera, persona_idpersona, tipo_apoderado_idtipo_apoderado) VALUES ('2026-I', ?, ?, 1)",
-            [carreraId, personaId]
-        ).catch(err => console.warn("Aviso al insertar estudiante:", err.message));
+
+        if (carreraId !== null) {
+            await query(
+                "INSERT INTO estudiante (periodo_academico, carrera_idcarrera, persona_idpersona, tipo_apoderado_idtipo_apoderado) VALUES ('2026-I', ?, ?, 1)",
+                [carreraId, personaId]
+            ).catch(err => console.warn("Aviso al insertar estudiante:", err.message));
+        }
 
         res.status(201).json({
             error: false,
@@ -276,7 +281,7 @@ app.get('/api/atenciones', async (req, res) => {
                 COALESCE(DATE_FORMAT(CONCAT(a.fecha_atencion, ' ', a.hora_atencion), '%d/%m/%Y %H:%i'), DATE_FORMAT(a.fecha_atencion, '%d/%m/%Y')) AS fecha,
                 p.dni,
                 CONCAT(p.apellido_paterno, ' ', COALESCE(p.apellido_materno, ''), ', ', p.nombres) AS paciente,
-                COALESCE(c.nombre_carrera, 'Enfermería Técnica') AS programa,
+                COALESCE(c.nombre_carrera, 'Otros (Docentes, Administrativos)') AS programa,
                 COALESCE(ec.temperatura, 36.5) AS temp,
                 ta.nombre AS diagnostico,
                 a.motivo_consulta AS subtipo,
