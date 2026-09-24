@@ -331,6 +331,15 @@ app.post('/api/atenciones', async (req, res) => {
         const destino = body.destino || 'Tópico / Reposo';
         const licenciada = (body.licenciada || body.personal || 'Lic. Enfermería').trim();
 
+        const fechaHora = body.fechaHora || body.fecha_hora || null;
+        let fechaAtn = null;
+        let horaAtn = null;
+        if (fechaHora && fechaHora.includes('T')) {
+            const parts = fechaHora.split('T');
+            fechaAtn = parts[0];
+            horaAtn = parts[1] ? (parts[1].length === 5 ? `${parts[1]}:00` : parts[1]) : null;
+        }
+
         if (!dni) {
             return res.status(400).json({
                 error: true,
@@ -359,8 +368,8 @@ app.post('/api/atenciones', async (req, res) => {
         const atnResult = await query(
             `INSERT INTO atencion 
             (codigo_atencion, fecha_atencion, hora_atencion, motivo_consulta, observaciones, persona_idpersona, usuario_idusuario, tipo_atencion_idtipo_atencion, licenciada) 
-            VALUES (?, CURDATE(), CURTIME(), ?, ?, ?, 1, ?, ?)`,
-            [codigoAtn, subtipo, tratamiento, personaId, idTipoAtencion, licenciada]
+            VALUES (?, COALESCE(?, CURDATE()), COALESCE(?, CURTIME()), ?, ?, ?, 1, ?, ?)`,
+            [codigoAtn, fechaAtn, horaAtn, subtipo, tratamiento, personaId, idTipoAtencion, licenciada]
         );
         const atencionId = atnResult.insertId;
 

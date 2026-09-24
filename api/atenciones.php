@@ -80,6 +80,8 @@ if ($metodo === 'POST') {
     $destino     = trim($datos['destino'] ?? 'Tópico / Reposo');
     $licenciada  = trim($datos['licenciada'] ?? 'Lic. de Guardia');
     $obs         = trim($datos['observaciones'] ?? '');
+    $fechaHoraRaw = trim($datos['fechaHora'] ?? $datos['fecha_hora'] ?? '');
+    $fechaAtn    = !empty($fechaHoraRaw) ? str_replace('T', ' ', $fechaHoraRaw) . ':00' : date('Y-m-d H:i:s');
 
     if (empty($dni) || empty($diagnostico)) {
         responderJSON(["error" => true, "mensaje" => "DNI y Diagnóstico son obligatorios."], 400);
@@ -93,13 +95,14 @@ if ($metodo === 'POST') {
             temperatura, diagnostico, subtipo, tratamiento, destino,
             licenciada, observaciones
         ) VALUES (
-            NOW(), :dni, :paciente, :programa,
+            :fecha_atencion, :dni, :paciente, :programa,
             :temp, :diag, :subtipo, :trat, :destino,
             :lic, :obs
         )";
 
         $stmt = $db->prepare($sql);
         $stmt->execute([
+            ':fecha_atencion' => $fechaAtn,
             ':dni'      => $dni,
             ':paciente' => $paciente,
             ':programa' => $programa,

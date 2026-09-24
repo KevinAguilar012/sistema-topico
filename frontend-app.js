@@ -197,6 +197,27 @@ function actualizarEstadoUI(conectado = true) {
     }
 }
 
+// Helper para obtener fecha y hora actual en zona horaria local (Formato: YYYY-MM-DDTHH:mm)
+function obtenerFechaHoraActualISO() {
+    const ahora = new Date();
+    const offset = ahora.getTimezoneOffset() * 60000;
+    return new Date(ahora.getTime() - offset).toISOString().slice(0, 16);
+}
+
+// Actualiza automáticamente los campos de fecha y hora de los formularios
+function actualizarFechasHorasAtencion() {
+    const ahoraLocal = obtenerFechaHoraActualISO();
+
+    const f1FechaHoraReg = document.getElementById('f1FechaHoraReg');
+    if (f1FechaHoraReg) f1FechaHoraReg.value = ahoraLocal;
+
+    const iraFechaHora = document.getElementById('iraFechaHora');
+    if (iraFechaHora) iraFechaHora.value = ahoraLocal;
+
+    const edaFechaHora = document.getElementById('edaFechaHora');
+    if (edaFechaHora) edaFechaHora.value = ahoraLocal;
+}
+
 // ================================================================
 // 2. INICIALIZACIÓN DEL SISTEMA
 // ================================================================
@@ -215,16 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     toggleApoderadoF1();
 
     // Autoasignar fecha y hora actual en los formularios
-    const ahora = new Date();
-    const offset = ahora.getTimezoneOffset() * 60000;
-    const horaLocal = new Date(ahora.getTime() - offset);
-    const fechaHoraLocal = horaLocal.toISOString().slice(0, 16);
-
-    const f1FechaHoraReg = document.getElementById('f1FechaHoraReg');
-    if (f1FechaHoraReg) f1FechaHoraReg.value = fechaHoraLocal;
-
-    const edaFechaHora = document.getElementById('edaFechaHora');
-    if (edaFechaHora) edaFechaHora.value = fechaHoraLocal;
+    actualizarFechasHorasAtencion();
 
     // Establecer estado visual de la base de datos
     actualizarEstadoUI(true);
@@ -433,9 +445,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 destino = estadoHid.includes('grave') || manejoFluidos.includes('intravenosa') ? 'Referido URGENTE (IV)' : 'Ambulatorio';
             }
 
+            let valFechaHora = document.getElementById('iraFechaHora')?.value;
+            if (diagPrincipal === 'EDA') {
+                valFechaHora = document.getElementById('edaFechaHora')?.value;
+            }
+
+            let fechaMostrar = "";
+            if (valFechaHora && valFechaHora.includes('T')) {
+                const parts = valFechaHora.split('T');
+                if (parts.length === 2) {
+                    const subParts = parts[0].split('-');
+                    if (subParts.length === 3) {
+                        fechaMostrar = `${subParts[2]}/${subParts[1]}/${subParts[0]} ${parts[1]}`;
+                    }
+                }
+            }
+            if (!fechaMostrar) {
+                const ahora = new Date();
+                fechaMostrar = ahora.toLocaleDateString('es-PE') + " " + ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+            }
+
             const atencion = {
                 id: Date.now(),
-                fecha: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                fecha: fechaMostrar,
+                fechaHora: valFechaHora,
                 dni: dni,
                 paciente: document.getElementById('f2NombreCompleto').value,
                 programa: document.getElementById('f2Programa').value,
@@ -596,6 +629,17 @@ async function mostrarSeccion(idSec) {
         if (elem) elem.classList.remove('hidden');
     }
 
+    // Refrescar fecha y hora actual al presionar las opciones de navegación
+    if (idSec === 'f1_paciente') {
+        const f1FechaHoraReg = document.getElementById('f1FechaHoraReg');
+        if (f1FechaHoraReg) f1FechaHoraReg.value = obtenerFechaHoraActualISO();
+    } else if (idSec === 'f2_atencion') {
+        const iraFechaHora = document.getElementById('iraFechaHora');
+        if (iraFechaHora) iraFechaHora.value = obtenerFechaHoraActualISO();
+        const edaFechaHora = document.getElementById('edaFechaHora');
+        if (edaFechaHora) edaFechaHora.value = obtenerFechaHoraActualISO();
+    }
+
     await actualizarKpiMetrics();
 
     if (idSec === 'f3_historial') await renderizarTablaF3();
@@ -644,6 +688,7 @@ async function buscarPacienteF2() {
 
     if (paciente) {
         const edadFormateada = paciente.edad ? `${paciente.edad} años` : '';
+        const ahoraLocal = obtenerFechaHoraActualISO();
 
         // Formulario 2 (Atención Principal)
         if (document.getElementById('f2Dni')) document.getElementById('f2Dni').value = paciente.dni;
@@ -656,6 +701,7 @@ async function buscarPacienteF2() {
         if (document.getElementById('iraEdad')) document.getElementById('iraEdad').value = edadFormateada;
         if (document.getElementById('iraGenero')) document.getElementById('iraGenero').value = paciente.genero || '';
         if (document.getElementById('iraDireccion')) document.getElementById('iraDireccion').value = paciente.domicilio;
+        if (document.getElementById('iraFechaHora')) document.getElementById('iraFechaHora').value = ahoraLocal;
 
         // Ficha de Atención EDA
         if (document.getElementById('edaDni')) document.getElementById('edaDni').value = paciente.dni;
@@ -664,6 +710,7 @@ async function buscarPacienteF2() {
         if (document.getElementById('edaGenero')) document.getElementById('edaGenero').value = paciente.genero || '';
         if (document.getElementById('edaDireccion')) document.getElementById('edaDireccion').value = paciente.domicilio;
         if (document.getElementById('edaAcompanante')) document.getElementById('edaAcompanante').value = paciente.apoderado;
+        if (document.getElementById('edaFechaHora')) document.getElementById('edaFechaHora').value = ahoraLocal;
 
         if (infoCard) infoCard.classList.remove('hidden');
         mostrarToast(`Paciente cargado: ${paciente.nombreCompleto}`, 'success');
@@ -708,10 +755,16 @@ function cambiarFichaAtencion(tipo) {
     if (fichaIRA) fichaIRA.classList.add('hidden');
     if (fichaEDA) fichaEDA.classList.add('hidden');
 
+    const ahoraLocal = obtenerFechaHoraActualISO();
+
     if (tipo === 'IRA' && fichaIRA) {
         fichaIRA.classList.remove('hidden');
+        const iraFechaHora = document.getElementById('iraFechaHora');
+        if (iraFechaHora) iraFechaHora.value = ahoraLocal;
     } else if (tipo === 'EDA' && fichaEDA) {
         fichaEDA.classList.remove('hidden');
+        const edaFechaHora = document.getElementById('edaFechaHora');
+        if (edaFechaHora) edaFechaHora.value = ahoraLocal;
     }
 }
 
@@ -1212,7 +1265,7 @@ function limpiarFormularioF1() {
     if (anioEl) anioEl.value = '';
 
     const fechaHoraReg = document.getElementById('f1FechaHoraReg');
-    if (fechaHoraReg) fechaHoraReg.value = new Date().toISOString().slice(0, 16);
+    if (fechaHoraReg) fechaHoraReg.value = obtenerFechaHoraActualISO();
 
     if (typeof inicializarUbigeo === 'function') {
         inicializarUbigeo();
@@ -1248,7 +1301,7 @@ function limpiarFormularioF2() {
     resetearMedicamentosIRA();
 
     const iraFecha = document.getElementById('iraFechaHora');
-    if (iraFecha) iraFecha.value = new Date().toISOString().slice(0, 16);
+    if (iraFecha) iraFecha.value = obtenerFechaHoraActualISO();
     const edaFecha = document.getElementById('edaFechaHora');
-    if (edaFecha) edaFecha.value = new Date().toISOString().slice(0, 16);
+    if (edaFecha) edaFecha.value = obtenerFechaHoraActualISO();
 }
