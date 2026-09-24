@@ -47,7 +47,7 @@ if ($metodo === 'POST') {
         }
 
         try {
-            $stmt = $db->prepare("SELECT id, nombre, cep, usuario, pass, turno FROM usuarios WHERE usuario = :usuario AND estado = 1 LIMIT 1");
+            $stmt = $db->prepare("SELECT id, nombre, cep, usuario, pass, turno FROM usuarios WHERE BINARY usuario = :usuario AND estado = 1 LIMIT 1");
             $stmt->execute([':usuario' => $usuario]);
             $user = $stmt->fetch();
 
@@ -79,7 +79,7 @@ if ($metodo === 'POST') {
 
    try {
     // 1. Verificar si el nombre de usuario ya existe en la tabla "usuario"
-    $check = $db->prepare("SELECT idusuario FROM usuario WHERE nombre_usuario = :usuario LIMIT 1");
+    $check = $db->prepare("SELECT idusuario FROM usuario WHERE BINARY nombre_usuario = :usuario LIMIT 1");
     $check->execute([':usuario' => $usuario]);
     if ($check->fetch()) {
         responderJSON(["error" => true, "mensaje" => "El nombre de usuario ya está registrado."], 409);

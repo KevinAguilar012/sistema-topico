@@ -496,13 +496,13 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
             let rows = [];
             try {
                 // Consultar primero en tabla 'usuarios' (Personal de Salud)
-                rows = await query("SELECT id, nombre, cep, usuario, pass, turno FROM usuarios WHERE usuario = ? AND estado = 1 LIMIT 1", [usuario]);
+                rows = await query("SELECT id, nombre, cep, usuario, pass, turno FROM usuarios WHERE BINARY usuario = ? AND estado = 1 LIMIT 1", [usuario]);
             } catch (e) {}
 
             if (!rows || rows.length === 0) {
                 try {
                     // Fallback a tabla 'usuario' (schema bd_topico_instituto)
-                    rows = await query("SELECT idusuario AS id, nombre_usuario AS usuario, contrasena AS pass, 'Lic. Enfermería' AS nombre, 'Mañana' AS turno FROM usuario WHERE nombre_usuario = ? AND estado = 1 LIMIT 1", [usuario]);
+                    rows = await query("SELECT idusuario AS id, nombre_usuario AS usuario, contrasena AS pass, 'Lic. Enfermería' AS nombre, 'Mañana' AS turno FROM usuario WHERE BINARY nombre_usuario = ? AND estado = 1 LIMIT 1", [usuario]);
                 } catch (e2) {}
             }
 
@@ -554,7 +554,7 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
         await asegurarTablaUsuarios();
 
         // Verificar si el usuario ya existe
-        const check = await query("SELECT id FROM usuarios WHERE usuario = ? LIMIT 1", [userVal]);
+        const check = await query("SELECT id FROM usuarios WHERE BINARY usuario = ? LIMIT 1", [userVal]);
         if (check && check.length > 0) {
             return res.status(409).json({ error: true, mensaje: "El nombre de usuario ya está registrado." });
         }
