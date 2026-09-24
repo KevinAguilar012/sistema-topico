@@ -730,6 +730,60 @@ body {
 .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .form-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.form-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+
+/* FILAS DINÁMICAS DE MEDICAMENTOS (IRA) */
+.ira-med-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) auto;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+
+.btn-remove-med {
+    height: 38px;
+    width: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    background-color: var(--bg-danger, #fee2e2);
+    color: var(--color-danger, #dc2626);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-remove-med:hover {
+    background-color: #fca5a5;
+}
+
+body.dark-mode .btn-remove-med {
+    background-color: rgba(220, 38, 38, 0.2);
+    color: #fca5a5;
+    border-color: rgba(220, 38, 38, 0.4);
+}
+
+.btn-add-med {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background-color: var(--primary-light, #e0f2fe);
+    color: var(--primary, #2563eb);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-add-med:hover {
+    background-color: var(--primary);
+    color: #ffffff;
+}
 
 /* TABLAS Y BADGES */
 .table-responsive {
@@ -1001,7 +1055,7 @@ body.dark-mode .btn-secondary:hover {
         border-right: none;
         border-bottom: 1px solid var(--border-color);
     }
-    .form-grid-2, .form-grid-3, .form-grid-4, .stats-grid {
+    .form-grid-2, .form-grid-3, .form-grid-4, .form-grid-5, .ira-med-row, .stats-grid {
         grid-template-columns: 1fr;
     }
 }

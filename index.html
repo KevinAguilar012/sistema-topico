@@ -540,33 +540,50 @@
 
                             <fieldset class="form-section">
                                 <legend>5. Conducta y Tratamiento</legend>
-                                <div class="form-grid-3">
-                                    <div class="input-group">
-                                        <label for="iraMedicamento">Medicamento:</label>
-                                        <input type="text" id="iraMedicamento" placeholder="Ej. Paracetamol">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="iraDosis">Dosis:</label>
-                                        <input type="text" id="iraDosis" placeholder="Ej. 500 mg">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="iraVia">Vía de administración:</label>
-                                        <select id="iraVia">
-                                            <option value="Oral">Oral</option>
-                                            <option value="Intramuscular">Intramuscular</option>
-                                            <option value="Inhalatoria">Inhalatoria</option>
-                                        </select>
+
+                                <div id="iraContenedorMedicamentos">
+                                    <div class="ira-med-row">
+                                        <div class="input-group">
+                                            <label for="iraMedicamento">Medicamento:</label>
+                                            <input type="text" class="ira-med-nombre" id="iraMedicamento" placeholder="Ej. Paracetamol">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="iraDosis">Dosis:</label>
+                                            <input type="text" class="ira-med-dosis" id="iraDosis" placeholder="Ej. 500 mg">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="iraVia">Vía de administración:</label>
+                                            <select class="ira-med-via" id="iraVia">
+                                                <option value="Oral">Oral</option>
+                                                <option value="Intramuscular">Intramuscular</option>
+                                                <option value="Inhalatoria">Inhalatoria</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="iraFrecuencia">Frecuencia:</label>
+                                            <input type="text" class="ira-med-frecuencia" id="iraFrecuencia" placeholder="Ej. Cada 8 horas">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="iraDuracion">Duración:</label>
+                                            <input type="text" class="ira-med-duracion" id="iraDuracion" placeholder="Ej. 3 días">
+                                        </div>
+                                        <div class="input-group" style="margin-bottom: 0;">
+                                            <button type="button" class="btn-remove-med" onclick="eliminarFilaMedicamentoIRA(this)" title="Eliminar medicamento">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="form-grid-2" style="margin-top: 10px;">
-                                    <div class="input-group">
-                                        <label for="iraFrecuencia">Frecuencia y Duración:</label>
-                                        <input type="text" id="iraFrecuencia" placeholder="Ej. Cada 8 horas por 3 días">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="iraMedidasGrales">Medidas Generales:</label>
-                                        <input type="text" id="iraMedidasGrales" placeholder="Reposo, reposición de líquidos...">
-                                    </div>
+
+                                <div style="margin-top: 6px; margin-bottom: 14px;">
+                                    <button type="button" class="btn-add-med" onclick="agregarFilaMedicamentoIRA()">
+                                        <i class="fa-solid fa-plus"></i> Agregar otro medicamento
+                                    </button>
+                                </div>
+
+                                <div class="input-group" style="margin-top: 10px;">
+                                    <label for="iraMedidasGrales">Medidas Generales:</label>
+                                    <input type="text" id="iraMedidasGrales" placeholder="Reposo, reposición de líquidos...">
                                 </div>
                             </fieldset>
 
@@ -613,7 +630,7 @@
 
                         <!-- CONTENEDOR DINÁMICO 2: FICHA DE ATENCIÓN - EDA -->
                         <div id="fichaEDA" class="ficha-dinamica hidden">
-                            <h3 class="sub-title-ficha">VIGILANCIA DE EDA (CIE 10: A00-A09) - FICHA CLÍNICA</h3>
+                            <h3 class="sub-title-ficha">FICHA DE ATENCIÓN - ENFERMEDADES DIARREICAS AGUDAS (EDA)</h3>
 
                             <fieldset class="form-section">
                                 <legend>1. Datos de Identificación</legend>

@@ -401,7 +401,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (diagPrincipal === 'IRA') {
                 temp = document.getElementById('iraTemp')?.value || '36.5';
                 subtipo = document.getElementById('iraClasificacion')?.value || 'IRA sin especificar';
-                tratamiento = `${document.getElementById('iraMedicamento')?.value || ''} ${document.getElementById('iraDosis')?.value || ''}`.trim();
+
+                const medRows = document.querySelectorAll('#iraContenedorMedicamentos .ira-med-row');
+                const listaTratamientos = [];
+
+                medRows.forEach(row => {
+                    const med = row.querySelector('.ira-med-nombre')?.value?.trim() || '';
+                    const dosis = row.querySelector('.ira-med-dosis')?.value?.trim() || '';
+                    const via = row.querySelector('.ira-med-via')?.value?.trim() || '';
+                    const frec = row.querySelector('.ira-med-frecuencia')?.value?.trim() || '';
+                    const dur = row.querySelector('.ira-med-duracion')?.value?.trim() || '';
+
+                    if (med || dosis) {
+                        const item = [med, dosis, via ? `(${via})` : '', frec, dur ? `por ${dur}` : ''].filter(Boolean).join(' ');
+                        listaTratamientos.push(item);
+                    }
+                });
+
+                tratamiento = listaTratamientos.length > 0 ? listaTratamientos.join(' | ') : 'Sin tratamiento especificado';
                 destino = document.getElementById('iraReferencia')?.value || 'Atención en Tópico';
             } else if (diagPrincipal === 'EDA') {
                 temp = document.getElementById('edaTemp')?.value || '36.5';
@@ -696,6 +713,74 @@ function cambiarFichaAtencion(tipo) {
     } else if (tipo === 'EDA' && fichaEDA) {
         fichaEDA.classList.remove('hidden');
     }
+}
+
+function agregarFilaMedicamentoIRA() {
+    const contenedor = document.getElementById('iraContenedorMedicamentos');
+    if (!contenedor) return;
+
+    const newRow = document.createElement('div');
+    newRow.className = 'ira-med-row';
+    newRow.innerHTML = `
+        <div class="input-group">
+            <label>Medicamento:</label>
+            <input type="text" class="ira-med-nombre" placeholder="Ej. Amoxicilina">
+        </div>
+        <div class="input-group">
+            <label>Dosis:</label>
+            <input type="text" class="ira-med-dosis" placeholder="Ej. 500 mg">
+        </div>
+        <div class="input-group">
+            <label>Vía de administración:</label>
+            <select class="ira-med-via">
+                <option value="Oral">Oral</option>
+                <option value="Intramuscular">Intramuscular</option>
+                <option value="Inhalatoria">Inhalatoria</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Frecuencia:</label>
+            <input type="text" class="ira-med-frecuencia" placeholder="Ej. Cada 8 horas">
+        </div>
+        <div class="input-group">
+            <label>Duración:</label>
+            <input type="text" class="ira-med-duracion" placeholder="Ej. 7 días">
+        </div>
+        <div class="input-group" style="margin-bottom: 0;">
+            <button type="button" class="btn-remove-med" onclick="eliminarFilaMedicamentoIRA(this)" title="Eliminar medicamento">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
+    `;
+    contenedor.appendChild(newRow);
+}
+
+function eliminarFilaMedicamentoIRA(btnElement) {
+    const contenedor = document.getElementById('iraContenedorMedicamentos');
+    if (!contenedor) return;
+    const rows = contenedor.querySelectorAll('.ira-med-row');
+
+    if (rows.length > 1) {
+        const row = btnElement.closest('.ira-med-row');
+        if (row) row.remove();
+    } else {
+        mostrarToast("Debe haber al menos una fila de medicamentos.", "warning");
+    }
+}
+
+function resetearMedicamentosIRA() {
+    const contenedor = document.getElementById('iraContenedorMedicamentos');
+    if (!contenedor) return;
+    const rows = contenedor.querySelectorAll('.ira-med-row');
+    rows.forEach((row, index) => {
+        if (index === 0) {
+            row.querySelectorAll('input').forEach(input => input.value = '');
+            const select = row.querySelector('select');
+            if (select) select.selectedIndex = 0;
+        } else {
+            row.remove();
+        }
+    });
 }
 
 // ================================================================
@@ -1159,6 +1244,8 @@ function limpiarFormularioF2() {
             el.value = '';
         }
     });
+
+    resetearMedicamentosIRA();
 
     const iraFecha = document.getElementById('iraFechaHora');
     if (iraFecha) iraFecha.value = new Date().toISOString().slice(0, 16);
