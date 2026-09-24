@@ -49,14 +49,24 @@ async function safeFetchJson(url, options = {}) {
         // o si realmente el endpoint no existe (debería intentar PHP)
         const cloned = res.clone();
         let esRespuestaNegocio = false;
+        let jsonNegocio = null;
         try {
             const json = await cloned.json();
             if (json && typeof json === 'object') {
                 esRespuestaNegocio = true;
+                jsonNegocio = json;
             }
         } catch (e) {}
 
-        if (!esRespuestaNegocio) {
+        // Si es una respuesta JSON válida del servidor (lógica de negocio), devolverla directamente
+        if (esRespuestaNegocio) {
+            return jsonNegocio;
+        }
+
+        // Solo intentar fallback PHP para endpoints base (sin parámetros de ruta tipo /pacientes/12345)
+        const apiPath = url.replace(/.*\/api\//, '');
+        const isSimpleEndpoint = /^[a-zA-Z_]+(\?.*)?$/.test(apiPath);
+        if (isSimpleEndpoint) {
             const phpUrl = url.replace(/\/api\/([^?#]+)/, '/api/$1.php');
             try {
                 const resPhp = await fetch(phpUrl, options);
