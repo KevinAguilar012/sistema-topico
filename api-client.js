@@ -13,7 +13,7 @@ const ApiConfig = {
 
         // Si se abre directamente el archivo HTML (file://)
         if (protocol === 'file:') {
-            return 'http://localhost:3000/api';
+            return 'https://sistema-topico.onrender.com/api';
         }
         // Si estamos en localhost/127.0.0.1 y el puerto no es el 3000 (ej. XAMPP en 80, Live Server en 5500)
         if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '3000') {
