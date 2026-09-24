@@ -918,7 +918,7 @@ async function actualizarReportesF6() {
     const programas = [
         "Enfermería Técnica",
         "Arquitectura de Plataformas y Servicios de Tecnologías de la Información",
-        "Otros (Docentes, Administrativos y Externos)"
+        "Otros (Docentes, Administrativos)"
     ];
 
     const datosProgramas = [];
@@ -926,8 +926,9 @@ async function actualizarReportesF6() {
     if (tbody) tbody.innerHTML = "";
 
     programas.forEach(prog => {
-        const cIra = atenciones.filter(x => x.programa === prog && x.diagnostico === 'IRA').length;
-        const cEda = atenciones.filter(x => x.programa === prog && x.diagnostico === 'EDA').length;
+        const esOtros = prog.startsWith('Otros');
+        const cIra = atenciones.filter(x => x.diagnostico === 'IRA' && (x.programa === prog || (esOtros && (x.programa || '').startsWith('Otros')))).length;
+        const cEda = atenciones.filter(x => x.diagnostico === 'EDA' && (x.programa === prog || (esOtros && (x.programa || '').startsWith('Otros')))).length;
 
         datosProgramas.push({
             programa: prog,
