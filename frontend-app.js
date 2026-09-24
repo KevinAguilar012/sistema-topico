@@ -853,17 +853,12 @@ async function renderizarTablaBotiquin() {
             : `<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Disponible</span>`;
 
         tr.innerHTML = `
-            <td>${item.fecha || ''}</td>
-            <td><strong>${item.dni || ''}</strong></td>
-            <td>${item.paciente || ''}</td>
-            <td>${item.programa || ''}</td>
-            <td><span class="badge badge-info">${item.diagnostico || ''}</span></td>
-            <td><span style="font-weight: 500;">${item.subtipo || '-'}</span></td>
-            <td><span class="badge badge-warning" style="font-weight: 600;">${item.programa || 'General'}</span></td>
-            <td><span style="color: var(--primary); font-weight: 600;">${item.licenciada || 'Lic. de Guardia'}</span></td>
-            <td>
-                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
-            </td>
+            <td><strong>${item.codigo || ''}</strong></td>
+            <td>${item.nombre || ''}</td>
+            <td><span class="badge badge-info">${item.categoria || 'General'}</span></td>
+            <td><strong>${stock} u.</strong></td>
+            <td>${item.vencimiento || '-'}</td>
+            <td>${estado}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -894,17 +889,10 @@ async function renderizarTablaUsuarios() {
     listaUsuarios.forEach(item => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${item.fecha || ''}</td>
-            <td><strong>${item.dni || ''}</strong></td>
-            <td>${item.paciente || ''}</td>
-            <td>${item.programa || ''}</td>
-            <td><span class="badge badge-info">${item.diagnostico || ''}</span></td>
-            <td><span style="font-weight: 500;">${item.subtipo || '-'}</span></td>
-            <td><span class="badge badge-warning" style="font-weight: 600;">${item.programa || 'General'}</span></td>
-            <td><span style="color: var(--primary); font-weight: 600;">${item.licenciada || 'Lic. de Guardia'}</span></td>
-            <td>
-                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
-            </td>
+            <td><strong>${item.nombre || ''}</strong></td>
+            <td>${item.cep || '-'}</td>
+            <td><code>${item.usuario || ''}</code></td>
+            <td><span class="badge badge-primary">${item.turno || 'Mañana'}</span></td>
         `;
         tbody.appendChild(tr);
     });
@@ -949,19 +937,13 @@ async function actualizarReportesF6() {
 
         if (tbody) {
             const tr = document.createElement('tr');
+            const total = cIra + cEda;
             tr.innerHTML = `
-            <td>${item.fecha || ''}</td>
-            <td><strong>${item.dni || ''}</strong></td>
-            <td>${item.paciente || ''}</td>
-            <td>${item.programa || ''}</td>
-            <td><span class="badge badge-info">${item.diagnostico || ''}</span></td>
-            <td><span style="font-weight: 500;">${item.subtipo || '-'}</span></td>
-            <td><span class="badge badge-warning" style="font-weight: 600;">${item.programa || 'General'}</span></td>
-            <td><span style="color: var(--primary); font-weight: 600;">${item.licenciada || 'Lic. de Guardia'}</span></td>
-            <td>
-                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
-            </td>
-        `;
+                <td><strong>${prog}</strong></td>
+                <td><span class="badge badge-info">${cIra}</span></td>
+                <td><span class="badge badge-warning">${cEda}</span></td>
+                <td><strong>${total}</strong></td>
+            `;
             tbody.appendChild(tr);
         }
     });
