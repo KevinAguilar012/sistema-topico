@@ -367,15 +367,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             mostrarToast(`Historia Clínica ${paciente.historiaClinica} registrada para ${paciente.nombres} ${paciente.apePaterno}`, 'success');
-            formF1.reset();
-            toggleApoderadoF1();
-            
-            if (f1FechaHoraReg) f1FechaHoraReg.value = new Date().toISOString().slice(0, 16);
+            limpiarFormularioF1();
         });
 
-        formF1.addEventListener('reset', () => {
-            setTimeout(toggleApoderadoF1, 0);
-        });
+        formF1.addEventListener('reset', (e) => { e.preventDefault(); limpiarFormularioF1(); });
     }
 
     // ------------------------------------------------------------
@@ -449,21 +444,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Mostrar Receta médica
             mostrarModalReceta(atencion);
 
-            // Limpieza del formulario
-            formF2.reset();
-            document.getElementById('f2BuscarDni').value = "";
-            document.getElementById('f2Dni').value = "";
-            document.getElementById('f2NombreCompleto').value = "";
-            document.getElementById('f2Programa').value = "";
-
-            const infoCard = document.getElementById('pacienteEncontradoInfo');
-            if (infoCard) infoCard.classList.add('hidden');
-            
-            cambiarFichaAtencion('');
+            limpiarFormularioF2();
 
             // Actualizar tablas y reportes
             await renderizarTablaF3();
             await actualizarReportesF6();
+        });
+
+        formF2.addEventListener('reset', (e) => {
+            e.preventDefault();
+            limpiarFormularioF2();
         });
     }
 
@@ -677,6 +667,7 @@ function limpiarCamposPacienteF2() {
     if (document.getElementById('iraEdad')) document.getElementById('iraEdad').value = "";
     if (document.getElementById('iraGenero')) document.getElementById('iraGenero').value = "";
     if (document.getElementById('iraDireccion')) document.getElementById('iraDireccion').value = "";
+    if (document.getElementById('iraAcompanante')) document.getElementById('iraAcompanante').value = "";
 
     // EDA
     if (document.getElementById('edaDni')) document.getElementById('edaDni').value = "";
@@ -977,11 +968,11 @@ function inicializarSelectsFechaNacF1() {
         selectAnio.innerHTML = htmlAnios;
     }
 
-    const formF1 = document.getElementById('formF1');
+    const formF1 = document.getElementById('formF1Paciente');
     if (formF1) {
         formF1.addEventListener('reset', () => {
             setTimeout(() => {
-                actualizarFechaNacF1();
+                limpiarFormularioF1();
             }, 0);
         });
     }
@@ -1113,4 +1104,64 @@ function generarHistoriaF1(dni) {
     if (numHist) {
         numHist.value = dni.length > 0 ? `HC-${dni}` : '';
     }
+}
+
+function limpiarFormularioF1() {
+    const formF1 = document.getElementById('formF1Paciente');
+    if (formF1) formF1.reset();
+
+    const numHist = document.getElementById('f1NumHistoria');
+    if (numHist) numHist.value = '';
+
+    const fechaNacHidden = document.getElementById('f1FechaNac');
+    if (fechaNacHidden) fechaNacHidden.value = '';
+
+    const inputEdad = document.getElementById('f1Edad');
+    if (inputEdad) inputEdad.value = '';
+
+    const diaEl = document.getElementById('f1FechaNacDia');
+    if (diaEl) diaEl.value = '';
+    const mesEl = document.getElementById('f1FechaNacMes');
+    if (mesEl) mesEl.value = '';
+    const anioEl = document.getElementById('f1FechaNacAnio');
+    if (anioEl) anioEl.value = '';
+
+    const fechaHoraReg = document.getElementById('f1FechaHoraReg');
+    if (fechaHoraReg) fechaHoraReg.value = new Date().toISOString().slice(0, 16);
+
+    if (typeof inicializarUbigeo === 'function') {
+        inicializarUbigeo();
+    }
+
+    toggleApoderadoF1();
+}
+
+function limpiarFormularioF2() {
+    const formF2 = document.getElementById('formF2Atencion');
+    if (formF2) formF2.reset();
+
+    const searchDni = document.getElementById('f2BuscarDni');
+    if (searchDni) searchDni.value = '';
+
+    limpiarCamposPacienteF2();
+
+    const diagMain = document.getElementById('f2DiagnosticoMain');
+    if (diagMain) diagMain.value = '';
+    cambiarFichaAtencion('');
+
+    const subFichas = document.querySelectorAll('#fichaIRA input, #fichaIRA select, #fichaIRA textarea, #fichaEDA input, #fichaEDA select, #fichaEDA textarea');
+    subFichas.forEach(el => {
+        if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = false;
+        } else if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else if (!el.hasAttribute('readonly')) {
+            el.value = '';
+        }
+    });
+
+    const iraFecha = document.getElementById('iraFechaHora');
+    if (iraFecha) iraFecha.value = new Date().toISOString().slice(0, 16);
+    const edaFecha = document.getElementById('edaFechaHora');
+    if (edaFecha) edaFecha.value = new Date().toISOString().slice(0, 16);
 }
