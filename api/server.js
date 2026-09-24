@@ -574,6 +574,15 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
 });
 
 // Derivaciones y Reportes
+app.get('/api/derivaciones', async (req, res) => {
+    try {
+        const [rows] = await db.query("SELECT * FROM derivaciones ORDER BY id DESC");
+        return res.json({ error: false, datos: rows });
+    } catch (err) {
+        return res.json({ error: false, datos: [] });
+    }
+});
+
 app.post('/api/derivaciones', (req, res) => {
     res.json({ error: false, mensaje: "Derivación registrada correctamente." });
 });

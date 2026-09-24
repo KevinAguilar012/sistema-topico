@@ -164,7 +164,7 @@ async function actualizarKpiMetrics() {
     try {
         const atenciones = (typeof API !== 'undefined' && API.atenciones) ? await API.atenciones.listar() : [];
         const botiquin = (typeof API !== 'undefined' && API.botiquin) ? await API.botiquin.listar() : [];
-        const derivaciones = (typeof API !== 'undefined' && API.derivaciones) ? await API.derivaciones.listar() : [];
+        const derivaciones = (typeof API !== 'undefined' && API.derivaciones && typeof API.derivaciones.listar === 'function') ? await API.derivaciones.listar() : [];
         
         const hoyStr = new Date().toLocaleDateString('es-PE');
         const atencionesHoy = (atenciones || []).filter(a => (a.fecha || '').includes(hoyStr)).length;

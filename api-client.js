@@ -272,6 +272,20 @@ const API = {
     // ------------------------------------------------------------
     derivaciones: {
         /**
+         * GET /api/derivaciones
+         * Obtiene la lista completa de derivaciones en MySQL
+         */
+        async listar() {
+            try {
+                const json = await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/derivaciones`);
+                return (json && !json.error && Array.isArray(json.datos)) ? json.datos : [];
+            } catch (e) {
+                console.warn("Error al listar derivaciones desde la API:", e);
+                return [];
+            }
+        },
+
+        /**
          * POST /api/derivaciones
          * Registra una nueva derivación de paciente en MySQL
          */
