@@ -1424,15 +1424,6 @@ function inicializarSelectsFechaNacF1() {
         }
         selectAnio.innerHTML = htmlAnios;
     }
-
-    const formF1 = document.getElementById('formF1Paciente');
-    if (formF1) {
-        formF1.addEventListener('reset', () => {
-            setTimeout(() => {
-                limpiarFormularioF1();
-            }, 0);
-        });
-    }
 }
 
 function actualizarFechaNacF1() {
@@ -1453,6 +1444,15 @@ function actualizarFechaNacF1() {
         const diaActual = diaEl.value;
         let htmlDias = '<option value="">Día</option>';
         for (let d = 1; d <= dMax; d++) {
+            const val = String(d).padStart(2, '0');
+            const selected = val === diaActual ? 'selected' : '';
+            htmlDias += `<option value="${val}" ${selected}>${d}</option>`;
+        }
+        diaEl.innerHTML = htmlDias;
+    } else {
+        const diaActual = diaEl.value;
+        let htmlDias = '<option value="">Día</option>';
+        for (let d = 1; d <= 31; d++) {
             const val = String(d).padStart(2, '0');
             const selected = val === diaActual ? 'selected' : '';
             htmlDias += `<option value="${val}" ${selected}>${d}</option>`;
@@ -1570,26 +1570,26 @@ function generarHistoriaF1(dni) {
 
 function limpiarFormularioF1() {
     const formF1 = document.getElementById('formF1Paciente');
-    if (formF1) formF1.reset();
-
-    const numHist = document.getElementById('f1NumHistoria');
-    if (numHist) numHist.value = '';
-
-    const fechaNacHidden = document.getElementById('f1FechaNac');
-    if (fechaNacHidden) fechaNacHidden.value = '';
-
-    const inputEdad = document.getElementById('f1Edad');
-    if (inputEdad) inputEdad.value = '';
-
-    const diaEl = document.getElementById('f1FechaNacDia');
-    if (diaEl) diaEl.value = '';
-    const mesEl = document.getElementById('f1FechaNacMes');
-    if (mesEl) mesEl.value = '';
-    const anioEl = document.getElementById('f1FechaNacAnio');
-    if (anioEl) anioEl.value = '';
+    if (formF1) {
+        formF1.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.id === 'f1Establecimiento') {
+                el.value = 'IESTP CARHUAZ - TÓPICO INSTITUCIONAL';
+            } else if (el.id === 'f1Nacionalidad') {
+                el.value = 'Peruana';
+            } else if (el.id === 'f1Etnia') {
+                el.value = 'Mestizo';
+            } else if (el.tagName === 'SELECT') {
+                el.selectedIndex = 0;
+            } else if (el.type !== 'button' && el.type !== 'submit' && el.type !== 'reset') {
+                el.value = '';
+            }
+        });
+    }
 
     const fechaHoraReg = document.getElementById('f1FechaHoraReg');
     if (fechaHoraReg) fechaHoraReg.value = obtenerFechaHoraActualISO();
+
+    inicializarSelectsFechaNacF1();
 
     if (typeof inicializarUbigeo === 'function') {
         inicializarUbigeo();
