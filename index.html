@@ -876,8 +876,8 @@
 
                     <div class="form-grid-3" style="margin-bottom: 15px;">
                         <div class="input-group">
-                            <label for="f3FiltroDni">Filtrar por DNI / Apellido:</label>
-                            <input type="text" id="f3FiltroDni" placeholder="Escriba para filtrar..." onkeyup="filtrarTablaF3()">
+                            <label for="f3FiltroDni">Filtrar por DNI:</label>
+                            <input type="text" id="f3FiltroDni" data-solo-numeros="true" maxlength="8" inputmode="numeric" pattern="[0-9]{0,8}" placeholder="Ingrese DNI (8 dígitos)" onkeyup="filtrarTablaF3()">
                         </div>
                         <div class="input-group">
                             <label for="f3FiltroDiag">Filtrar por Diagnóstico:</label>
