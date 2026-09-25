@@ -327,6 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const nombreLic = usrSesion.displayName || (usrSesion.nombre ? (usrSesion.nombre.toLowerCase().startsWith('lic.') ? usrSesion.nombre : `Lic. ${usrSesion.nombre}`) : `Lic. ${usrSesion.usuario}`);
             const userLabel = document.getElementById('userDisplayName');
             if (userLabel) userLabel.innerText = nombreLic;
+            actualizarCamposPersonalAtencion();
 
             document.getElementById('loginView')?.classList.add('hidden');
             document.getElementById('dashboardView')?.classList.remove('hidden');
@@ -360,6 +361,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     document.getElementById('loginView').classList.add('hidden');
                     document.getElementById('dashboardView').classList.remove('hidden');
                     document.getElementById('userDisplayName').innerText = nombreFormateado;
+                    actualizarCamposPersonalAtencion();
 
                     sessionStorage.setItem('usuarioSesion', JSON.stringify({
                         ...res.usuario,
@@ -517,7 +519,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tratFarmac = document.getElementById('edaTratFarmacologico')?.value || 'Ninguno';
                 tratamiento = `${manejoFluidos} | ${tratFarmac}`;
 
-                destino = estadoHid.includes('grave') || manejoFluidos.includes('intravenosa') ? 'Referido URGENTE (IV)' : 'Ambulatorio';
+                destino = document.getElementById('edaReferencia')?.value || (estadoHid.includes('grave') || manejoFluidos.includes('intravenosa') ? 'Referido URGENTE (IV)' : 'Ambulatorio');
             }
 
             let valFechaHora = document.getElementById('iraFechaHora')?.value;
@@ -852,6 +854,17 @@ function limpiarCamposPacienteF2() {
     if (infoCard) infoCard.classList.add('hidden');
 }
 
+function actualizarCamposPersonalAtencion() {
+    const userLabel = document.getElementById('userDisplayName');
+    const nombreLic = (userLabel && userLabel.innerText.trim()) ? userLabel.innerText.trim() : 'Lic. Enfermería';
+    
+    const iraPersonal = document.getElementById('iraPersonal');
+    if (iraPersonal) iraPersonal.value = nombreLic;
+
+    const edaPersonal = document.getElementById('edaPersonal');
+    if (edaPersonal) edaPersonal.value = nombreLic;
+}
+
 // ================================================================
 // 5. GESTIÓN DINÁMICA DE FICHAS (IRA / EDA)
 // ================================================================
@@ -863,6 +876,7 @@ function cambiarFichaAtencion(tipo) {
     if (fichaEDA) fichaEDA.classList.add('hidden');
 
     const ahoraLocal = obtenerFechaHoraActualISO();
+    actualizarCamposPersonalAtencion();
 
     if (tipo === 'IRA' && fichaIRA) {
         fichaIRA.classList.remove('hidden');
@@ -1244,9 +1258,123 @@ function abrirModalRecetaDesdeHistorial(index) {
 async function filtrarTablaF3() {
     const texto = (document.getElementById('f3FiltroDni')?.value || '').trim();
     const diagFiltro = document.getElementById('f3FiltroDiag')?.value || 'TODOS';
+    const soloMias = document.getElementById('f3FiltroSoloMias')?.checked || false;
 
-    const filtrados = await API.atenciones.listar(texto, diagFiltro);
+    let filtrados = await API.atenciones.listar(texto, diagFiltro);
+
+    if (soloMias) {
+        const userLabel = document.getElementById('userDisplayName');
+        const nombreLicActual = (userLabel && userLabel.innerText.trim()) ? userLabel.innerText.trim().toLowerCase() : '';
+        if (nombreLicActual) {
+            filtrados = filtrados.filter(item => {
+                const licItem = (item.licenciada || '').trim().toLowerCase();
+                return licItem.includes(nombreLicActual) || nombreLicActual.includes(licItem);
+            });
+        }
+    }
+
     await renderizarTablaF3(filtrados);
+}
+
+async function generarReportePersonalAtenciones() {
+    const userLabel = document.getElementById('userDisplayName');
+    const nombreLicActual = (userLabel && userLabel.innerText.trim()) ? userLabel.innerText.trim() : 'Lic. Enfermería';
+    const todasAtenciones = await API.atenciones.listar();
+
+    // Filtrar únicamente los casos atendidos por la licenciada que inició sesión
+    const actualLower = nombreLicActual.toLowerCase();
+    const misAtenciones = todasAtenciones.filter(item => {
+        const licItem = (item.licenciada || '').trim().toLowerCase();
+        return licItem.includes(actualLower) || actualLower.includes(licItem);
+    });
+
+    if (!misAtenciones || misAtenciones.length === 0) {
+        mostrarToast(`No se encontraron atenciones registradas a nombre de: ${nombreLicActual}`, 'warning');
+        return;
+    }
+
+    const totalIRA = misAtenciones.filter(a => a.diagnostico === 'IRA').length;
+    const totalEDA = misAtenciones.filter(a => a.diagnostico === 'EDA').length;
+    const totalOtros = misAtenciones.length - (totalIRA + totalEDA);
+
+    const fechaHoy = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    let filasHtml = misAtenciones.map((item, i) => `
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 8px; font-size: 12px; text-align: center;">${i + 1}</td>
+            <td style="padding: 8px; font-size: 12px;">${item.fecha || ''}</td>
+            <td style="padding: 8px; font-size: 12px;"><strong>${item.dni || ''}</strong></td>
+            <td style="padding: 8px; font-size: 12px;">${item.paciente || ''}</td>
+            <td style="padding: 8px; font-size: 12px;">${item.programa || ''}</td>
+            <td style="padding: 8px; font-size: 12px;"><strong>${item.diagnostico || ''}</strong> (${item.subtipo || '-'})</td>
+            <td style="padding: 8px; font-size: 11px;">${item.tratamiento || '-'}</td>
+        </tr>
+    `).join('');
+
+    const content = document.getElementById('modalReportePersonalContent');
+    if (content) {
+        content.innerHTML = `
+            <div style="text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px;">
+                <h2 style="margin: 0; color: var(--primary); font-size: 20px; font-family: 'Plus Jakarta Sans', sans-serif;">IESTP CARHUAZ - TÓPICO INSTITUCIONAL</h2>
+                <h3 style="margin: 5px 0 0 0; font-size: 16px; color: #2d3748;">REPORTE INDIVIDUAL DE CASOS ATENDIDOS</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #4a5568;"><strong>Atendido por:</strong> <span style="color: var(--primary); font-weight: 700;">${nombreLicActual}</span> | <strong>Fecha de Emisión:</strong> ${fechaHoy}</p>
+            </div>
+
+            <div style="display: flex; justify-content: space-around; background: #f7fafc; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 11px; color: #718096; font-weight: 600;">TOTAL ATENCIONES</div>
+                    <div style="font-size: 18px; font-weight: 700; color: #2d3748;">${misAtenciones.length}</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 11px; color: #3182ce; font-weight: 600;">CASOS IRA</div>
+                    <div style="font-size: 18px; font-weight: 700; color: #2b6cb0;">${totalIRA}</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 11px; color: #e53e3e; font-weight: 600;">CASOS EDA</div>
+                    <div style="font-size: 18px; font-weight: 700; color: #c53030;">${totalEDA}</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 11px; color: #d69e2e; font-weight: 600;">OTROS</div>
+                    <div style="font-size: 18px; font-weight: 700; color: #b7791f;">${totalOtros}</div>
+                </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-family: 'Inter', sans-serif;">
+                <thead>
+                    <tr style="background-color: var(--primary); color: white;">
+                        <th style="padding: 8px; font-size: 12px; border: 1px solid var(--primary);">#</th>
+                        <th style="padding: 8px; font-size: 12px; border: 1px solid var(--primary);">Fecha / Hora</th>
+                        <th style="padding: 8px; font-size: 12px; border: 1px solid var(--primary);">DNI</th>
+                        <th style="padding: 8px; font-size: 12px; border: 1px solid var(--primary);">Paciente</th>
+                        <th style="padding: 8px; font-size: 12px; border: 1px solid var(--primary);">Programa / Área</th>
+                        <th style="padding: 8px; font-size: 12px; border: 1px solid var(--primary);">Diagnóstico</th>
+                        <th style="padding: 8px; font-size: 12px; border: 1px solid var(--primary);">Tratamiento Prescrito</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${filasHtml}
+                </tbody>
+            </table>
+
+            <div style="margin-top: 50px; display: flex; justify-content: flex-end;">
+                <div style="text-align: center; width: 260px; border-top: 1.5px solid #2d3748; padding-top: 6px;">
+                    <p style="margin: 0; font-size: 13px; font-weight: 700; color: #2d3748;">${nombreLicActual}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 11px; color: #718096;">Firma y Sello del Personal Responsable</p>
+                </div>
+            </div>
+        `;
+    }
+
+    document.getElementById('modalReportePersonal')?.classList.remove('hidden');
+}
+
+function cerrarModalReportePersonal() {
+    document.getElementById('modalReportePersonal')?.classList.add('hidden');
+}
+
+function imprimirReportePersonal() {
+    window.print();
+    cerrarModalReportePersonal();
 }
 
 // ================================================================
@@ -1628,6 +1756,8 @@ function limpiarFormularioF2() {
     if (iraFecha) iraFecha.value = obtenerFechaHoraActualISO();
     const edaFecha = document.getElementById('edaFechaHora');
     if (edaFecha) edaFecha.value = obtenerFechaHoraActualISO();
+
+    actualizarCamposPersonalAtencion();
 }
 
 function limpiarFormularioF7() {

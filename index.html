@@ -585,7 +585,7 @@
                                     </div>
                                     <div class="input-group">
                                         <label for="iraPersonal">Atendido por (Firma/Sello):</label>
-                                        <input type="text" id="iraPersonal" readonly value="Lic. Enfermería - Tópico IESTP Carhuaz" >
+                                        <input type="text" id="iraPersonal" readonly placeholder="Cargando licenciada...">
                                     </div>
                                 </div>
                                 <div class="input-group" style="margin-top: 10px;">
@@ -859,6 +859,32 @@
                                     </div>
                                 </div>
                             </fieldset>
+
+                            <fieldset class="form-section">
+                                <legend>7. Seguimiento y Firma</legend>
+                                <div class="form-grid-3">
+                                    <div class="input-group">
+                                        <label for="edaProximoControl">Próximo Control:</label>
+                                        <input type="date" id="edaProximoControl">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaReferencia">Referencia / Contrarreferencia:</label>
+                                        <select id="edaReferencia">
+                                            <option value="No requiere">No requiere</option>
+                                            <option value="Referido a Hospital de Carhuaz">Referido a Hospital de Carhuaz</option>
+                                            <option value="Referido a Centro de Salud">Referido a Centro de Salud</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="edaPersonal">Atendido por (Firma/Sello):</label>
+                                        <input type="text" id="edaPersonal" readonly placeholder="Cargando licenciada...">
+                                    </div>
+                                </div>
+                                <div class="input-group" style="margin-top: 10px;">
+                                    <label for="edaObservaciones">Observaciones Adicionales:</label>
+                                    <textarea id="edaObservaciones" rows="2"></textarea>
+                                </div>
+                            </fieldset>
                         </div>
 
                         <div class="form-actions" style="margin-top: 20px;">
@@ -874,7 +900,7 @@
                         <p>Búsqueda y Seguimiento Cronológico de Atenciones en Tópico</p>
                     </div>
 
-                    <div class="form-grid-3" style="margin-bottom: 15px;">
+                    <div class="form-grid-3" style="margin-bottom: 15px; align-items: flex-end;">
                         <div class="input-group">
                             <label for="f3FiltroDni">Filtrar por DNI:</label>
                             <input type="text" id="f3FiltroDni" data-solo-numeros="true" maxlength="8" inputmode="numeric" pattern="[0-9]{0,8}" placeholder="Ingrese DNI (8 dígitos)" onkeyup="filtrarTablaF3()">
@@ -886,6 +912,14 @@
                                 <option value="IRA">Solo IRAS</option>
                                 <option value="EDA">Solo EDAS</option>
                             </select>
+                        </div>
+                        <div class="input-group" style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; margin-bottom: 4px;">
+                                <input type="checkbox" id="f3FiltroSoloMias" onchange="filtrarTablaF3()"> <i class="fa-solid fa-user-check"></i> Solo mis atenciones
+                            </label>
+                            <button type="button" class="btn-primary" onclick="generarReportePersonalAtenciones()" style="width: 100%; font-size: 13px;">
+                                <i class="fa-solid fa-file-invoice"></i> Generar Mi Reporte
+                            </button>
                         </div>
                     </div>
 
@@ -1224,6 +1258,25 @@
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" onclick="cerrarModalDerivacion()">Cerrar</button>
                 <button type="button" class="btn-primary" onclick="imprimirModalDerivacion()"><i class="fa-solid fa-print"></i> Imprimir Hoja de Referencia</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUADRO FLOTANTE (MODAL): REPORTE PERSONAL DE ATENCIONES -->
+    <div id="modalReportePersonal" class="modal-overlay hidden" onclick="if(event.target === this) cerrarModalReportePersonal()">
+        <div class="modal-card print-area" style="max-width: 850px; width: 95%;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-file-medical"></i> REPORTE INDIVIDUAL DE CASOS ATENDIDOS</h3>
+                <button type="button" class="btn-close-modal" onclick="cerrarModalReportePersonal()" title="Cerrar ventana" aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalReportePersonalContent">
+                <!-- Se construye dinámicamente con JS -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="cerrarModalReportePersonal()">Cerrar</button>
+                <button type="button" class="btn-primary" onclick="imprimirReportePersonal()"><i class="fa-solid fa-print"></i> Imprimir / Exportar PDF</button>
             </div>
         </div>
     </div>
