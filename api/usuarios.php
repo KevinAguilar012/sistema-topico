@@ -22,7 +22,7 @@ $action = isset($_GET['action']) ? $_GET['action'] : '';
 // ----------------------------------------------------------------
 if ($metodo === 'GET') {
     try {
-        $stmt = $db->query("SELECT id, nombre, cep, usuario, turno, created_at FROM usuarios WHERE estado = 1 ORDER BY id ASC");
+        $stmt = $db->query("SELECT id, nombre, cep, usuario, turno, rol, created_at FROM usuarios WHERE estado = 1 ORDER BY id ASC");
         $usuarios = $stmt->fetchAll();
         responderJSON(["error" => false, "datos" => $usuarios]);
     } catch (PDOException $e) {
@@ -47,7 +47,7 @@ if ($metodo === 'POST') {
         }
 
         try {
-            $stmt = $db->prepare("SELECT id, nombre, cep, usuario, pass, turno FROM usuarios WHERE BINARY usuario = :usuario AND estado = 1 LIMIT 1");
+            $stmt = $db->prepare("SELECT id, nombre, cep, usuario, pass, turno, rol FROM usuarios WHERE BINARY usuario = :usuario AND estado = 1 LIMIT 1");
             $stmt->execute([':usuario' => $usuario]);
             $user = $stmt->fetch();
 
@@ -72,39 +72,41 @@ if ($metodo === 'POST') {
     $usuario = trim($datos['usuario'] ?? '');
     $pass    = trim($datos['pass'] ?? '');
     $turno   = trim($datos['turno'] ?? 'Mañana');
+    $rol     = trim($datos['rol'] ?? 'enfermera');
 
     if (empty($nombre) || empty($cep) || empty($usuario) || empty($pass)) {
         responderJSON(["error" => true, "mensaje" => "Todos los campos son obligatorios."], 400);
     }
 
-   try {
-    // 1. Verificar si el nombre de usuario ya existe en la tabla "usuario"
-    $check = $db->prepare("SELECT idusuario FROM usuario WHERE BINARY nombre_usuario = :usuario LIMIT 1");
-    $check->execute([':usuario' => $usuario]);
-    if ($check->fetch()) {
-        responderJSON(["error" => true, "mensaje" => "El nombre de usuario ya está registrado."], 409);
+    try {
+        // 1. Verificar si el nombre de usuario ya existe en la tabla "usuarios"
+        $check = $db->prepare("SELECT id FROM usuarios WHERE BINARY usuario = :usuario LIMIT 1");
+        $check->execute([':usuario' => $usuario]);
+        if ($check->fetch()) {
+            responderJSON(["error" => true, "mensaje" => "El nombre de usuario ya está registrado."], 409);
+        }
+
+        // 2. Insertar en la tabla "usuarios"
+        $sql = "INSERT INTO usuarios (nombre, cep, usuario, pass, turno, rol, estado) 
+                VALUES (:nombre, :cep, :usuario, :pass, :turno, :rol, 1)";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ':nombre'  => $nombre,
+            ':cep'     => $cep,
+            ':usuario' => $usuario,
+            ':pass'    => $pass,
+            ':turno'   => $turno,
+            ':rol'     => $rol
+        ]);
+
+        responderJSON([
+            "error" => false,
+            "mensaje" => "Personal registrado exitosamente.",
+            "id" => $db->lastInsertId()
+        ], 201);
+
+    } catch (PDOException $e) {
+        responderJSON(["error" => true, "mensaje" => "Error al registrar usuario: " . $e->getMessage()], 500);
     }
-
-    // 2. Insertar en la tabla "usuario" adaptada a tus columnas reales
-    // Nota: 'docente_iddocente' lo enviamos o lo dejamos como NULL si tu tabla lo permite
-    $docente_id = $datos['docente_iddocente'] ?? null; 
-
-    $sql = "INSERT INTO usuario (nombre_usuario, contrasena, estado, docente_iddocente) 
-            VALUES (:usuario, :pass, 1, :docente_id)";
-
-    $stmt = $db->prepare($sql);
-    $stmt->execute([
-        ':usuario'    => $usuario,
-        ':pass'       => $pass,
-        ':docente_id' => $docente_id
-    ]);
-
-    responderJSON([
-        "error" => false,
-        "mensaje" => "Personal registrado exitosamente.",
-        "id" => $db->lastInsertId()
-    ], 201);
-
-   } catch (PDOException $e) {
-    responderJSON(["error" => true, "mensaje" => "Error al registrar usuario: " . $e->getMessage()], 500);
 }

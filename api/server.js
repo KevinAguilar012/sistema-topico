@@ -450,11 +450,15 @@ async function asegurarTablaUsuarios() {
                 usuario VARCHAR(50) NOT NULL UNIQUE,
                 pass VARCHAR(255) NOT NULL,
                 turno VARCHAR(50) DEFAULT 'Mañana',
+                rol VARCHAR(20) DEFAULT 'enfermera',
                 estado TINYINT(1) DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `;
         await query(sql);
+        try {
+            await query("ALTER TABLE usuarios ADD COLUMN rol VARCHAR(20) DEFAULT 'enfermera'");
+        } catch (e) {}
     } catch (err) {
         console.warn("No se pudo auto-crear la tabla 'usuarios':", err.message);
     }
@@ -468,14 +472,14 @@ function trimVal(val) {
 app.get('/api/usuarios', async (req, res) => {
     try {
         await asegurarTablaUsuarios();
-        const rows = await query("SELECT id, nombre, cep, usuario, turno, created_at FROM usuarios WHERE estado = 1 ORDER BY id ASC");
+        const rows = await query("SELECT id, nombre, cep, usuario, turno, rol, created_at FROM usuarios WHERE estado = 1 ORDER BY id ASC");
         if (rows && rows.length > 0) {
             return res.json({ error: false, datos: rows });
         }
         
         // Si no hay en 'usuarios', intentar listar desde 'usuario' (docentes de muestra)
         try {
-            const docenteRows = await query("SELECT idusuario AS id, nombre_usuario AS usuario, 'Lic. Enfermería' AS nombre, 'CEP-12345' AS cep, 'Mañana' AS turno FROM usuario");
+            const docenteRows = await query("SELECT idusuario AS id, nombre_usuario AS usuario, 'Lic. Enfermería' AS nombre, 'CEP-12345' AS cep, 'Mañana' AS turno, 'enfermera' AS rol FROM usuario");
             return res.json({ error: false, datos: docenteRows });
         } catch (e) {
             return res.json({ error: false, datos: [] });
@@ -496,13 +500,13 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
             let rows = [];
             try {
                 // Consultar primero en tabla 'usuarios' (Personal de Salud)
-                rows = await query("SELECT id, nombre, cep, usuario, pass, turno FROM usuarios WHERE BINARY usuario = ? AND estado = 1 LIMIT 1", [usuario]);
+                rows = await query("SELECT id, nombre, cep, usuario, pass, turno, rol FROM usuarios WHERE BINARY usuario = ? AND estado = 1 LIMIT 1", [usuario]);
             } catch (e) {}
 
             if (!rows || rows.length === 0) {
                 try {
                     // Fallback a tabla 'usuario' (schema bd_topico_instituto)
-                    rows = await query("SELECT idusuario AS id, nombre_usuario AS usuario, contrasena AS pass, 'Lic. Enfermería' AS nombre, 'Mañana' AS turno FROM usuario WHERE BINARY nombre_usuario = ? AND estado = 1 LIMIT 1", [usuario]);
+                    rows = await query("SELECT idusuario AS id, nombre_usuario AS usuario, contrasena AS pass, 'Lic. Enfermería' AS nombre, 'Mañana' AS turno, 'enfermera' AS rol FROM usuario WHERE BINARY nombre_usuario = ? AND estado = 1 LIMIT 1", [usuario]);
                 } catch (e2) {}
             }
 
@@ -516,7 +520,8 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
                             id: user.id,
                             nombre: user.nombre || `Lic. ${user.usuario}`,
                             usuario: user.usuario,
-                            turno: user.turno || 'Mañana'
+                            turno: user.turno || 'Mañana',
+                            rol: user.rol || 'enfermera'
                         }
                     });
                 }
@@ -527,7 +532,7 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
                 return res.json({
                     error: false,
                     mensaje: "Autenticación satisfactoria",
-                    usuario: { id: 1, nombre: "Administrador", usuario: "admin", turno: "Mañana" }
+                    usuario: { id: 1, nombre: "Administrador", usuario: "admin", turno: "Mañana", rol: "admin" }
                 });
             }
 
@@ -539,12 +544,13 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
     }
 
     // REGISTRO DE NUEVO PERSONAL DE SALUD / USUARIOS
-    const { nombre, cep, turno } = req.body || {};
+    const { nombre, cep, turno, rol } = req.body || {};
     const nombreVal = trimVal(nombre);
     const cepVal    = trimVal(cep);
     const userVal   = trimVal(usuario);
     const passVal   = trimVal(pass);
     const turnoVal  = trimVal(turno) || 'Mañana';
+    const rolVal    = trimVal(rol) || 'enfermera';
 
     if (!nombreVal || !cepVal || !userVal || !passVal) {
         return res.status(400).json({ error: true, mensaje: "Todos los campos (nombre, cep, usuario, contraseña) son obligatorios." });
@@ -559,8 +565,8 @@ app.post(['/api/usuarios', '/api/usuarios.php'], async (req, res) => {
             return res.status(409).json({ error: true, mensaje: "El nombre de usuario ya está registrado." });
         }
 
-        const sql = "INSERT INTO usuarios (nombre, cep, usuario, pass, turno) VALUES (?, ?, ?, ?, ?)";
-        const result = await query(sql, [nombreVal, cepVal, userVal, passVal, turnoVal]);
+        const sql = "INSERT INTO usuarios (nombre, cep, usuario, pass, turno, rol) VALUES (?, ?, ?, ?, ?, ?)";
+        const result = await query(sql, [nombreVal, cepVal, userVal, passVal, turnoVal, rolVal]);
 
         return res.status(201).json({
             error: false,
