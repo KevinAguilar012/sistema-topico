@@ -332,6 +332,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('loginView')?.classList.add('hidden');
             document.getElementById('dashboardView')?.classList.remove('hidden');
 
+            aplicarPermisosPorRol();
             await renderizarTablaBotiquin();
             await renderizarTablaUsuarios();
             await actualizarReportesF6();
@@ -339,6 +340,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) {
             console.error("Error al restaurar sesión:", e);
         }
+    } else {
+        aplicarPermisosPorRol();
     }
 
     // ------------------------------------------------------------
@@ -368,6 +371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         displayName: nombreFormateado
                     }));
 
+                    aplicarPermisosPorRol();
                     await renderizarTablaBotiquin();
                     await renderizarTablaUsuarios();
                     await actualizarReportesF6();
@@ -689,7 +693,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 cep: document.getElementById('f7Cep').value.trim(),
                 usuario: document.getElementById('f7User').value.trim(),
                 pass: document.getElementById('f7Pass').value.trim(),
-                turno: document.getElementById('f7Turno').value
+                turno: document.getElementById('f7Turno').value,
+                rol: document.getElementById('f7Rol') ? document.getElementById('f7Rol').value : 'enfermera'
             };
 
             const res = await API.usuarios.registrar(usr);
@@ -706,9 +711,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ================================================================
+// CONTROL DE PERMISOS Y ROLES DE USUARIO
+// ================================================================
+function aplicarPermisosPorRol() {
+    const sesionGuardada = sessionStorage.getItem('usuarioSesion');
+    const menuGest = document.getElementById('menuGestUsuarios');
+    if (!menuGest) return;
+
+    if (sesionGuardada) {
+        try {
+            const usr = JSON.parse(sesionGuardada);
+            if (usr.rol === 'admin' || usr.usuario === 'admin' || usr.usuario === 'mperez') {
+                menuGest.style.display = '';
+            } else {
+                menuGest.style.display = 'none';
+            }
+        } catch (e) {
+            menuGest.style.display = 'none';
+        }
+    } else {
+        menuGest.style.display = 'none';
+    }
+}
+
+// ================================================================
 // 3. NAVEGACIÓN ENTRE MÓDULOS
 // ================================================================
 async function mostrarSeccion(idSec) {
+    if (idSec === 'f7_usuarios') {
+        const sesionGuardada = sessionStorage.getItem('usuarioSesion');
+        let esAdmin = false;
+        if (sesionGuardada) {
+            try {
+                const usr = JSON.parse(sesionGuardada);
+                if (usr.rol === 'admin' || usr.usuario === 'admin' || usr.usuario === 'mperez') esAdmin = true;
+            } catch (e) {}
+        }
+        if (!esAdmin) {
+            mostrarToast('Acceso restringido: Solo administradores pueden ingresar a la gestión de usuarios.', 'error');
+            return;
+        }
+    }
+
     const secciones = ['secF1', 'secF2', 'secF3', 'secF4', 'secF5', 'secF6', 'secF7'];
     secciones.forEach(s => {
         const el = document.getElementById(s);
@@ -1430,17 +1474,23 @@ async function renderizarTablaUsuarios() {
     const listaUsuarios = await API.usuarios.listar();
 
     if (!listaUsuarios || listaUsuarios.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 15px; color: var(--text-muted);">No hay usuarios registrados.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 15px; color: var(--text-muted);">No hay usuarios registrados.</td></tr>`;
         return;
     }
 
     listaUsuarios.forEach(item => {
         const tr = document.createElement('tr');
+        const esAdmin = item.rol === 'admin';
+        const badgeRol = esAdmin 
+            ? `<span class="badge" style="background-color: #dc3545; color: white;">Administrador</span>` 
+            : `<span class="badge" style="background-color: #17a2b8; color: white;">Enfermera / Personal</span>`;
+
         tr.innerHTML = `
             <td><strong>${item.nombre || ''}</strong></td>
             <td>${item.cep || '-'}</td>
             <td><code>${item.usuario || ''}</code></td>
             <td><span class="badge badge-primary">${item.turno || 'Mañana'}</span></td>
+            <td>${badgeRol}</td>
         `;
         tbody.appendChild(tr);
     });

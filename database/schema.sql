@@ -925,6 +925,24 @@ INSERT INTO `usuario` VALUES (1,'docente01','HASH_DE_PRUEBA_01',1,1),(2,'docente
 UNLOCK TABLES;
 
 --
+-- Table structure for table `usuarios` (Personal de Salud)
+--
+
+CREATE TABLE IF NOT EXISTS `usuarios` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cep` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `usuario` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `pass` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `turno` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Mañana',
+  `rol` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'enfermera',
+  `estado` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_usuarios_usuario` (`usuario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
 -- Dumping events for database 'bd_topico_instituto'
 --
 

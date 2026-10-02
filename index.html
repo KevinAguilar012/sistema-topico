@@ -84,7 +84,7 @@
                         <li onclick="mostrarSeccion('f4_botiquin')"><i class="fa-solid fa-pills"></i> <span>Botiquín y Stock</span></li>
                         <li onclick="mostrarSeccion('f5_derivacion')"><i class="fa-solid fa-truck-medical"></i> <span>Derivaciones</span></li>
                         <li onclick="mostrarSeccion('f6_reportes')"><i class="fa-solid fa-chart-pie"></i> <span>Vigilancia MINSA</span></li>
-                        <li onclick="mostrarSeccion('f7_usuarios')"><i class="fa-solid fa-user-gear"></i> <span>Gest. Usuarios</span></li>
+                        <li id="menuGestUsuarios" onclick="mostrarSeccion('f7_usuarios')"><i class="fa-solid fa-user-gear"></i> <span>Gest. Usuarios</span></li>
                     </ul>
                 </div>
 
@@ -1183,7 +1183,7 @@
                                     <input type="text" id="f7User" required placeholder="mperez" autocomplete="off">
                                 </div>
                             </div>
-                            <div class="form-grid-2">
+                            <div class="form-grid-3">
                                 <div class="input-group">
                                     <label for="f7Pass">Contraseña de Acceso:</label>
                                     <input type="password" id="f7Pass" required autocomplete="new-password">
@@ -1193,6 +1193,13 @@
                                     <select id="f7Turno">
                                         <option value="Mañana">Mañana</option>
                                         <option value="Tarde">Tarde</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="f7Rol">Rol / Permisos:</label>
+                                    <select id="f7Rol">
+                                        <option value="enfermera">Enfermera / Personal</option>
+                                        <option value="admin">Administrador</option>
                                     </select>
                                 </div>
                             </div>
@@ -1211,10 +1218,11 @@
                                     <th>CEP / Licencia</th>
                                     <th>Usuario</th>
                                     <th>Turno Asignado</th>
+                                    <th>Rol</th>
                                 </tr>
                             </thead>
                             <tbody id="f7TablaBody">
-                                <tr><td colspan="4" style="text-align: center;">No hay usuarios registrados.</td></tr>
+                                <tr><td colspan="5" style="text-align: center;">No hay usuarios registrados.</td></tr>
                             </tbody>
                         </table>
                     </div>
