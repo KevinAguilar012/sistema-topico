@@ -13,6 +13,21 @@ if (!$db) {
     responderJSON(["error" => true, "mensaje" => "No hay conexión a la base de datos."], 503);
 }
 
+// Auto-crear tabla 'derivaciones' si no existe
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS `derivaciones` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `fecha_derivacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `dni_paciente` VARCHAR(20) NOT NULL,
+        `paciente_nombre` VARCHAR(255) NOT NULL,
+        `establecimiento_destino` VARCHAR(255) NOT NULL,
+        `motivo` TEXT NOT NULL,
+        `acompanante` VARCHAR(255) DEFAULT NULL,
+        `personal_responsable` VARCHAR(150) DEFAULT 'Lic. Enfermería',
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+} catch (Exception $e) {}
+
 $metodo = $_SERVER['REQUEST_METHOD'];
 
 if ($metodo === 'GET') {

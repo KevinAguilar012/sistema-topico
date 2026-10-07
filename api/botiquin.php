@@ -14,6 +14,30 @@ if (!$db) {
     responderJSON(["error" => true, "mensaje" => "No hay conexión a la base de datos."], 503);
 }
 
+// Auto-crear tabla 'medicamentos' y popular insumos por defecto si está vacía
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS `medicamentos` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `codigo` VARCHAR(50) UNIQUE NOT NULL,
+        `nombre` VARCHAR(255) NOT NULL,
+        `categoria` VARCHAR(100) DEFAULT 'General',
+        `stock` INT DEFAULT 0,
+        `vencimiento` DATE DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    $cnt = $db->query("SELECT COUNT(*) FROM medicamentos")->fetchColumn();
+    if (intval($cnt) === 0) {
+        $db->exec("INSERT INTO medicamentos (codigo, nombre, categoria, stock, vencimiento) VALUES
+            ('MED-001', 'Paracetamol 500mg Tableta', 'Analgésico / Antipirético', 150, '2027-12-31'),
+            ('MED-002', 'Sales de Rehidratación Oral (SRO) Sobres', 'Electrolitos', 200, '2027-10-30'),
+            ('MED-003', 'Amoxicilina 500mg Cápsula', 'Antibiótico', 80, '2026-11-15'),
+            ('MED-004', 'Ibuprofeno 400mg Tableta', 'Antiinflamatorio', 120, '2027-08-20'),
+            ('MED-005', 'Alcohol Antiséptico 70° 500ml', 'Desinfectante', 45, '2028-05-10'),
+            ('MED-006', 'Gasa Estéril 10x10cm (Paquete)', 'Material de Cura', 300, '2029-01-01');");
+    }
+} catch (Exception $e) {}
+
 $metodo = $_SERVER['REQUEST_METHOD'];
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
