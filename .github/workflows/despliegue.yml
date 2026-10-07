@@ -1,0 +1,24 @@
+name: Desplegar Web a Subdominio cPanel
+
+on:
+  push:
+    branches:
+      - main  # Asegúrate de que tu rama principal se llame 'main' o cámbiala por 'master'
+
+jobs:
+  web-deploy:
+    name: Subiendo archivos al subdominio
+    runs-on: ubuntu-latest
+    steps:
+    - name: 🚚 Obtener último código
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🚀 Subir archivos modificados
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        server-dir: topico.iestpcarhuaz.edu.pe/
