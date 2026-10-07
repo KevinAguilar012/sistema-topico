@@ -5,24 +5,43 @@
 
 class Conexion {
 
-    // Parámetros de conexión a MySQL en cPanel / Producción
-    private static $prodHost = "localhost"; // En cPanel MySQL suele ser localhost
+    // Parámetros por defecto para GitHub / Producción (las credenciales reales irán en config.local.php)
+    private static $prodHost    = "localhost";
     private static $prodHostAlt = "iestpcarhuaz.edu.pe";
-    private static $port     = "3306";
-    private static $prodDb   = "istecoij_sistema_topico";
-    private static $prodUser = "istecoij_admin";
-    private static $prodPass = "NxiZ&Aj?MaL&o*6E";
+    private static $port        = "3306";
+    private static $prodDb      = "istecoij_sistema_topico";
+    private static $prodUser    = "istecoij_admin";
+    private static $prodPass    = ""; // Queda vacío por seguridad en el repositorio
+
+    /**
+     * Carga la configuración desde config.local.php si existe
+     */
+    private static function cargarConfiguracion() {
+        $archivoConfig = __DIR__ . '/config.local.php';
+        if (file_exists($archivoConfig)) {
+            $config = require $archivoConfig;
+            if (isset($config['prodHost']))    self::$prodHost    = $config['prodHost'];
+            if (isset($config['prodHostAlt'])) self::$prodHostAlt = $config['prodHostAlt'];
+            if (isset($config['port']))        self::$port        = $config['port'];
+            if (isset($config['prodDb']))      self::$prodDb      = $config['prodDb'];
+            if (isset($config['prodUser']))    self::$prodUser    = $config['prodUser'];
+            if (isset($config['prodPass']))    self::$prodPass    = $config['prodPass'];
+        }
+    }
 
     /**
      * Retorna un objeto PDO conectado a la base de datos (Detección Local vs cPanel)
      */
     public static function conectar() {
+        // Carga variables locales/reales si el archivo privado existe
+        self::cargarConfiguracion();
+
         $opciones = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
             PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4",
-            PDO::ATTR_TIMEOUT            => 3 // Timeout rápido de 3s para evitar bloqueos sin internet
+            PDO::ATTR_TIMEOUT            => 3 // Timeout rápido para evitar bloqueos
         ];
 
         $httpHost = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
@@ -64,7 +83,7 @@ class Conexion {
             }
         }
 
-        // Fallback secundario si es cPanel pero falló la convención habitual
+        // Fallback secundario
         $credencialesFallback = [
             ['host' => 'localhost', 'user' => 'root', 'pass' => '', 'db' => self::$prodDb],
             ['host' => '127.0.0.1', 'user' => 'root', 'pass' => '', 'db' => self::$prodDb],
@@ -90,14 +109,13 @@ class Conexion {
         if ($conn) {
             return [
                 "conectado" => true,
-                "mensaje" => "Conexión a la base de datos establecida con éxito."
+                "mensaje"   => "Conexión a la base de datos establecida con éxito."
             ];
         }
 
         return [
             "conectado" => false,
-            "mensaje" => "No se pudo conectar a MySQL. En entorno local (XAMPP), asegúrate de que MySQL esté encendido y la BD importada. En cPanel, verifica usuario/contraseña."
+            "mensaje"   => "No se pudo conectar a MySQL. En entorno local (XAMPP), asegúrate de que MySQL esté encendido y la BD importada. En cPanel, verifica usuario/contraseña."
         ];
     }
 }
-
