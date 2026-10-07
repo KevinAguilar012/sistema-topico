@@ -4,14 +4,18 @@
 # ================================================================
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
 
     # Desactivar la vista de directorios por seguridad
     Options -Indexes
 
-    # Redirigir peticiones /api/endpoint a /api/endpoint.php si el archivo .php existe
+    # Regla 1: /api/pacientes/12345678 -> api/pacientes.php?dni=12345678
+    RewriteRule ^api/pacientes/([0-9A-Za-z]+)$ api/pacientes.php?dni=$1 [L,QSA]
+
+    # Regla 2: /api/botiquin/descontar -> api/botiquin.php?action=descontar
+    RewriteRule ^api/botiquin/descontar$ api/botiquin.php?action=descontar [L,QSA]
+
+    # Regla 3: Redirigir peticiones /api/endpoint a api/endpoint.php si el archivo existe
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{DOCUMENT_ROOT}/api/$1.php -f
     RewriteRule ^api/([a-zA-Z0-9_]+)$ api/$1.php [L,QSA]
 </IfModule>

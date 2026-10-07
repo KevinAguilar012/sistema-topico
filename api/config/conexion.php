@@ -6,10 +6,10 @@
 class Conexion {
 
     // Parámetros de conexión a MySQL en cPanel / Producción
-    private static $host = "localhost";
+    private static $host = "iestpcarhuaz.edu.pe";
     private static $port = "3306";
     private static $db   = "istecoij_sistema_topico";
-    private static $user = "istecoij_sistema_topico";
+    private static $user = "istecoij_admin";
     private static $pass = "NxiZ&Aj?MaL&o*6E";
 
     /**

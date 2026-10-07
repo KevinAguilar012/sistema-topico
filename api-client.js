@@ -19,8 +19,11 @@ const ApiConfig = {
         if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '3000') {
             return 'http://localhost:3000/api';
         }
-        // Producción: frontend en cPanel → backend PHP en el mismo servidor
-        return `${origin}/api`;
+        // Producción: frontend en cPanel → backend PHP en el mismo directorio/servidor
+        const pathname = window.location.pathname;
+        const lastSlash = pathname.lastIndexOf('/');
+        const dirPath = lastSlash > 0 ? pathname.substring(0, lastSlash) : '';
+        return `${origin}${dirPath}/api`;
     }
 };
 
@@ -169,7 +172,7 @@ const API = {
          */
         async buscarPorDni(dni) {
             try {
-                const json = await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/pacientes/${encodeURIComponent(dni)}`);
+                const json = await safeFetchJson(`${ApiConfig.obtenerBaseUrl()}/pacientes?dni=${encodeURIComponent(dni)}`);
                 if (json && json.encontrado && json.paciente) {
                     return json.paciente;
                 }

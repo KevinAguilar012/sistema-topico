@@ -4,6 +4,10 @@
 // Permite solicitudes desde cualquier origen (Frontend o Servidor Local)
 // ================================================================
 
+// Evitar que errores o advertencias HTML de PHP corrompan las respuestas JSON
+error_reporting(0);
+ini_set('display_errors', '0');
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
