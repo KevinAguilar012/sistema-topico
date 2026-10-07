@@ -6,49 +6,76 @@
 class Conexion {
 
     // Parámetros de conexión a MySQL en cPanel / Producción
-    private static $host = "iestpcarhuaz.edu.pe";
-    private static $port = "3306";
-    private static $db   = "istecoij_sistema_topico";
-    private static $user = "istecoij_admin";
-    private static $pass = "NxiZ&Aj?MaL&o*6E";
+    private static $prodHost = "localhost"; // En cPanel MySQL suele ser localhost
+    private static $prodHostAlt = "iestpcarhuaz.edu.pe";
+    private static $port     = "3306";
+    private static $prodDb   = "istecoij_sistema_topico";
+    private static $prodUser = "istecoij_admin";
+    private static $prodPass = "NxiZ&Aj?MaL&o*6E";
 
     /**
-     * Retorna un objeto PDO conectado a la base de datos
+     * Retorna un objeto PDO conectado a la base de datos (Detección Local vs cPanel)
      */
     public static function conectar() {
         $opciones = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
-            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4",
+            PDO::ATTR_TIMEOUT            => 3 // Timeout rápido de 3s para evitar bloqueos sin internet
         ];
 
-        // 1. Intentar con las credenciales principales (cPanel / Configuración por defecto)
-        try {
-            $dsn = "mysql:host=" . self::$host . ";port=" . self::$port . ";dbname=" . self::$db . ";charset=utf8mb4";
-            return new PDO($dsn, self::$user, self::$pass, $opciones);
-        } catch (PDOException $e) {
-            // Si el error es falta de servicio MySQL (conexión rechazada 2002), no reintentar
-            if (strpos($e->getMessage(), '2002') !== false) {
-                return null;
+        $httpHost = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+        $esLocal  = (strpos($httpHost, 'localhost') !== false || strpos($httpHost, '127.0.0.1') !== false || strpos($httpHost, '::1') !== false);
+
+        // --- ENTORNO LOCAL (Offline / XAMPP / WAMP) ---
+        if ($esLocal) {
+            $credencialesLocales = [
+                ['user' => 'root', 'pass' => ''],
+                ['user' => 'root', 'pass' => 'root']
+            ];
+            $basesLocales = [self::$prodDb, 'bd_topico_instituto', 'sistema_topico', 'sistema-topico'];
+
+            foreach ($credencialesLocales as $cred) {
+                foreach ($basesLocales as $db) {
+                    try {
+                        $dsn = "mysql:host=localhost;port=" . self::$port . ";dbname=" . $db . ";charset=utf8mb4";
+                        return new PDO($dsn, $cred['user'], $cred['pass'], $opciones);
+                    } catch (PDOException $e) {
+                        try {
+                            $dsn = "mysql:host=127.0.0.1;port=" . self::$port . ";dbname=" . $db . ";charset=utf8mb4";
+                            return new PDO($dsn, $cred['user'], $cred['pass'], $opciones);
+                        } catch (PDOException $e2) {
+                            continue;
+                        }
+                    }
+                }
             }
         }
 
-        // 2. Fallback para entorno local (XAMPP / WAMP) con usuario root y sin contraseña
-        $credencialesLocales = [
-            ['user' => 'root', 'pass' => ''],
-            ['user' => 'root', 'pass' => 'root']
-        ];
-        $basesDeDatosLocales = [self::$db, 'sistema_topico', 'sistema-topico', 'bd_topico_instituto'];
+        // --- ENTORNO PRODUCCIÓN (cPanel Hosting) ---
+        $hostsProduccion = [self::$prodHost, self::$prodHostAlt];
+        foreach ($hostsProduccion as $h) {
+            try {
+                $dsn = "mysql:host=" . $h . ";port=" . self::$port . ";dbname=" . self::$prodDb . ";charset=utf8mb4";
+                return new PDO($dsn, self::$prodUser, self::$prodPass, $opciones);
+            } catch (PDOException $e) {
+                continue;
+            }
+        }
 
-        foreach ($credencialesLocales as $cred) {
-            foreach ($basesDeDatosLocales as $dbname) {
-                try {
-                    $dsn = "mysql:host=" . self::$host . ";port=" . self::$port . ";dbname=" . $dbname . ";charset=utf8mb4";
-                    return new PDO($dsn, $cred['user'], $cred['pass'], $opciones);
-                } catch (PDOException $e) {
-                    continue;
-                }
+        // Fallback secundario si es cPanel pero falló la convención habitual
+        $credencialesFallback = [
+            ['host' => 'localhost', 'user' => 'root', 'pass' => '', 'db' => self::$prodDb],
+            ['host' => '127.0.0.1', 'user' => 'root', 'pass' => '', 'db' => self::$prodDb],
+            ['host' => 'localhost', 'user' => 'root', 'pass' => '', 'db' => 'bd_topico_instituto']
+        ];
+        foreach ($credencialesFallback as $f) {
+            try {
+                $dsn = "mysql:host=" . $f['host'] . ";port=" . self::$port . ";dbname=" . $f['db'] . ";charset=utf8mb4";
+                return new PDO($dsn, $f['user'], $f['pass'], $opciones);
+            } catch (PDOException $e) {
+                continue;
             }
         }
 
@@ -67,21 +94,10 @@ class Conexion {
             ];
         }
 
-        // Diagnóstico detallado del fallo
-        try {
-            $dsn = "mysql:host=" . self::$host . ";port=" . self::$port . ";charset=utf8mb4";
-            $testConn = new PDO($dsn, "root", "", [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-            
-            return [
-                "conectado" => false,
-                "mensaje" => "El servidor MySQL está activo, pero la base de datos no existe. Importa el archivo 'database/schema.sql'."
-            ];
-        } catch (PDOException $e) {
-            return [
-                "conectado" => false,
-                "mensaje" => "No se pudo conectar al servidor MySQL en " . self::$host . ". ¿Está encendido el servicio MySQL en XAMPP/servidor? Error: " . $e->getMessage()
-            ];
-        }
+        return [
+            "conectado" => false,
+            "mensaje" => "No se pudo conectar a MySQL. En entorno local (XAMPP), asegúrate de que MySQL esté encendido y la BD importada. En cPanel, verifica usuario/contraseña."
+        ];
     }
 }
 

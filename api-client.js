@@ -1,25 +1,22 @@
 // ================================================================
-// SISTEMA INTEGRAL DEL TÓPICO - CLIENTE API (FRONTEND <-> BACKEND)
-// Soporta tanto Servidor Node.js + Express como PHP Fallback
+// SISTEMA INTEGRAL DEL TÓPICO - CLIENTE API (FRONTEND <-> BACKEND PHP)
+// Configurado para PHP en entorno Local (XAMPP/WAMP) y Producción (cPanel)
 // ================================================================
 
 const ApiConfig = {
-    // URL base del servidor (Node.js Express o PHP)
+    /**
+     * Obtiene la URL base de la API PHP dinámicamente según la ubicación del frontend
+     */
     obtenerBaseUrl() {
         const origin = window.location.origin;
         const protocol = window.location.protocol;
-        const hostname = window.location.hostname;
-        const port = window.location.port;
 
-        // Si se abre directamente el archivo HTML (file://)
+        // Si el archivo HTML se abre directamente desde el explorador de archivos (file://)
         if (protocol === 'file:') {
-            return 'https://sistema-topico.onrender.com/api';
+            return 'http://localhost/sistema-topico/api';
         }
-        // Si estamos en localhost/127.0.0.1 y el puerto no es el 3000 (ej. XAMPP en 80, Live Server en 5500)
-        if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '3000') {
-            return 'http://localhost:3000/api';
-        }
-        // Producción: frontend en cPanel → backend PHP en el mismo directorio/servidor
+
+        // Entorno de servidor web (Apache en XAMPP local o cPanel hosting)
         const pathname = window.location.pathname;
         const lastSlash = pathname.lastIndexOf('/');
         const dirPath = lastSlash > 0 ? pathname.substring(0, lastSlash) : '';
@@ -28,15 +25,15 @@ const ApiConfig = {
 };
 
 /**
- * Realiza peticiones HTTP de forma segura procesando JSON y capturando respuestas vacías o no válidas
+ * Realiza peticiones HTTP de forma segura procesando respuestas JSON desde PHP
  */
 async function safeFetchJson(url, options = {}) {
     let res;
     try {
         res = await fetch(url, options);
     } catch (netErr) {
-        // Fallback si falla la conexión y no se usaba la extensión .php
-        if (!url.includes('.php') && window.location.protocol !== 'file:') {
+        // Si la petición a /api/endpoint falla por red, intentar directo a /api/endpoint.php
+        if (!url.includes('.php')) {
             const phpUrl = url.replace(/\/api\/([^?#]+)/, '/api/$1.php');
             try {
                 res = await fetch(phpUrl, options);
@@ -48,42 +45,20 @@ async function safeFetchJson(url, options = {}) {
         }
     }
 
-    if (!res.ok && res.status === 404 && !url.includes('.php')) {
-        // Verificar si el 404 es una respuesta válida del negocio (ej. paciente no encontrado)
-        // o si realmente el endpoint no existe (debería intentar PHP)
-        const cloned = res.clone();
-        let esRespuestaNegocio = false;
-        let jsonNegocio = null;
+    // Si devuelve 404 pero no tenía la extensión .php (ej. mod_rewrite no habilitado en Apache local)
+    if (res.status === 404 && !url.includes('.php')) {
+        const phpUrl = url.replace(/\/api\/([^?#]+)/, '/api/$1.php');
         try {
-            const json = await cloned.json();
-            if (json && typeof json === 'object') {
-                esRespuestaNegocio = true;
-                jsonNegocio = json;
+            const resPhp = await fetch(phpUrl, options);
+            if (resPhp.ok || resPhp.status !== 404) {
+                res = resPhp;
             }
         } catch (e) {}
-
-        // Si es una respuesta JSON válida del servidor (lógica de negocio), devolverla directamente
-        if (esRespuestaNegocio) {
-            return jsonNegocio;
-        }
-
-        // Solo intentar fallback PHP para endpoints base (sin parámetros de ruta tipo /pacientes/12345)
-        const apiPath = url.replace(/.*\/api\//, '');
-        const isSimpleEndpoint = /^[a-zA-Z_]+(\?.*)?$/.test(apiPath);
-        if (isSimpleEndpoint) {
-            const phpUrl = url.replace(/\/api\/([^?#]+)/, '/api/$1.php');
-            try {
-                const resPhp = await fetch(phpUrl, options);
-                if (resPhp.ok || resPhp.status !== 404) {
-                    res = resPhp;
-                }
-            } catch (e) {}
-        }
     }
 
     const text = await res.text();
     if (!text || !text.trim()) {
-        return { error: true, mensaje: "El servidor devolvió una respuesta vacía. Verifique que la API esté en ejecución." };
+        return { error: true, mensaje: "El servidor devolvió una respuesta vacía." };
     }
 
     try {
