@@ -3,7 +3,7 @@ name: Desplegar Web a Subdominio cPanel
 on:
   push:
     branches:
-      - principal  # Tu rama en GitHub se llama 'principal'
+      - main  # Tu rama en GitHub se llama 'principal'
 
 jobs:
   web-deploy:
