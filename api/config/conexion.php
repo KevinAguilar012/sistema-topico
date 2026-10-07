@@ -39,11 +39,11 @@ class Conexion {
             foreach ($credencialesLocales as $cred) {
                 foreach ($basesLocales as $db) {
                     try {
-                        $dsn = "mysql:host=localhost;port=" . self::$port . ";dbname=" . $db . ";charset=utf8mb4";
+                        $dsn = "mysql:host=127.0.0.1;port=" . self::$port . ";dbname=" . $db . ";charset=utf8mb4";
                         return new PDO($dsn, $cred['user'], $cred['pass'], $opciones);
                     } catch (PDOException $e) {
                         try {
-                            $dsn = "mysql:host=127.0.0.1;port=" . self::$port . ";dbname=" . $db . ";charset=utf8mb4";
+                            $dsn = "mysql:host=localhost;port=" . self::$port . ";dbname=" . $db . ";charset=utf8mb4";
                             return new PDO($dsn, $cred['user'], $cred['pass'], $opciones);
                         } catch (PDOException $e2) {
                             continue;

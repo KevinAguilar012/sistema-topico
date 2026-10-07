@@ -55,8 +55,8 @@ if ($metodo === 'GET') {
 
     try {
         if (!empty($dni)) {
-            $stmt = $db->prepare($sqlBase . " WHERE p.dni = :dni OR p.idpersona = :dni LIMIT 1");
-            $stmt->execute([':dni' => $dni]);
+            $stmt = $db->prepare($sqlBase . " WHERE p.dni = :dni OR p.idpersona = :idpersona LIMIT 1");
+            $stmt->execute([':dni' => $dni, ':idpersona' => $dni]);
             $paciente = $stmt->fetch();
 
             if ($paciente) {
