@@ -1505,8 +1505,15 @@ function normalizarNombrePrograma(prog) {
     if (p.includes("enfermer")) {
         return "Enfermería Técnica";
     }
-    if (p.includes("arquitectura") || p.includes("tecnolog") || p.includes("plataforma") || p.includes("t.i") || p.includes("ti")) {
+    if (p.includes("arquitectura") || p.includes("tecnolog") || p.includes("plataforma") || p.includes("t.i") || p.includes("software")) {
         return "Arquitectura de Plataformas y Servicios de Tecnologías de la Información";
+    }
+    if (p.includes("docente") || p.includes("administrativ") || p.includes("adm.") || p.includes("otros")) {
+        return "Otros (Docentes, Administrativos)";
+    }
+    // 'Estudiante' sin carrera específica → asignar a Enfermería por defecto (carrera más común)
+    if (p === "estudiante" || p.includes("estudiante")) {
+        return "Enfermería Técnica";
     }
     return "Otros (Docentes, Administrativos)";
 }

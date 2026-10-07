@@ -23,7 +23,7 @@ function inicializarTablaAtenciones($db) {
             `fecha_atencion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `dni_paciente` VARCHAR(20) NOT NULL,
             `paciente_nombre` VARCHAR(255) NOT NULL,
-            `programa` VARCHAR(150) DEFAULT 'Estudiante',
+            `programa` VARCHAR(150) DEFAULT 'Enfermería Técnica',
             `temperatura` VARCHAR(20) DEFAULT '36.5°C',
             `diagnostico` VARCHAR(100) NOT NULL,
             `subtipo` VARCHAR(255) DEFAULT '',
@@ -49,7 +49,7 @@ function inicializarTablaAtenciones($db) {
                     CONCAT(a.fecha_atencion, ' ', a.hora_atencion) AS fecha_atencion,
                     p.dni AS dni_paciente,
                     TRIM(CONCAT(p.nombres, ' ', p.apellido_paterno, ' ', COALESCE(p.apellido_materno, ''))) AS paciente_nombre,
-                    IF(est.idestudiante IS NOT NULL, 'Estudiante', IF(doc.iddocente IS NOT NULL, 'Docentes / Adm.', IF(adm.idadministrativo IS NOT NULL, 'Docentes / Adm.', 'Estudiante'))) AS programa,
+                    IF(est.idestudiante IS NOT NULL, COALESCE(c.nombre_carrera, 'Enfermería Técnica'), IF(doc.iddocente IS NOT NULL, 'Otros (Docentes, Administrativos)', IF(adm.idadministrativo IS NOT NULL, 'Otros (Docentes, Administrativos)', 'Enfermería Técnica'))) AS programa,
                     COALESCE(ec.temperatura, '36.5°C') AS temperatura,
                     CASE 
                         WHEN ta.nombre LIKE '%Respiratoria%' OR ta.nombre LIKE '%IRA%' THEN 'IRA'
@@ -68,10 +68,27 @@ function inicializarTablaAtenciones($db) {
                 LEFT JOIN atencion_ira ira ON ira.atencion_idatencion = a.idatencion
                 LEFT JOIN atencion_eda eda ON eda.atencion_idatencion = a.idatencion
                 LEFT JOIN estudiante est ON est.persona_idpersona = p.idpersona
+                LEFT JOIN carrera c ON est.carrera_idcarrera = c.idcarrera
                 LEFT JOIN docente doc ON doc.persona_idpersona = p.idpersona
                 LEFT JOIN administrativo adm ON adm.persona_idpersona = p.idpersona
                 ORDER BY a.idatencion ASC");
             }
+        }
+
+        // Corregir registros existentes que tienen 'Estudiante' en vez del nombre real del programa
+        try {
+            $checkCarrera = $db->query("SHOW TABLES LIKE 'carrera'")->fetch();
+            if ($checkCarrera) {
+                $db->exec("UPDATE atenciones at
+                    JOIN persona p ON at.dni_paciente = p.dni
+                    JOIN estudiante est ON est.persona_idpersona = p.idpersona
+                    JOIN carrera c ON est.carrera_idcarrera = c.idcarrera
+                    SET at.programa = c.nombre_carrera
+                    WHERE (at.programa = 'Estudiante' OR at.programa = 'Docentes / Adm.')
+                    AND c.nombre_carrera IS NOT NULL");
+            }
+        } catch (Exception $e2) {
+            // Ignorar si no se pudo actualizar
         }
     } catch (Exception $e) {
         // Ignorar si no se pudo autoinicializar
