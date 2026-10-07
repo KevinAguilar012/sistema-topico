@@ -5,12 +5,12 @@
 
 class Conexion {
 
-    // Parámetros de conexión por defecto para XAMPP
+    // Parámetros de conexión a MySQL en cPanel
     private static $host = "localhost";
     private static $port = "3306";
-    private static $db   = "sistema-topico";
-    private static $user = "root";
-    private static $pass = "";
+    private static $db   = "istecoij_sistema_topico";
+    private static $user = "istecoij_sistema_topico";
+    private static $pass = "NxiZ&Aj?MaL&o*6E";
 
     /**
      * Retorna un objeto PDO conectado a la base de datos

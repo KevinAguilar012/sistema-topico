@@ -19,8 +19,8 @@ const ApiConfig = {
         if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '3000') {
             return 'http://localhost:3000/api';
         }
-        // Producción: frontend en cPanel → backend en Render
-        return 'https://sistema-topico.onrender.com/api';
+        // Producción: frontend en cPanel → backend PHP en el mismo servidor
+        return `${origin}/api`;
     }
 };
 

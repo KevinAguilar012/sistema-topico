@@ -1,0 +1,17 @@
+# ================================================================
+# REGLAS DE ENRUTAMIENTO APACHE PARA CPANEL (MOD_REWRITE)
+# Redirige peticiones /api/endpoint a /api/endpoint.php
+# ================================================================
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Desactivar la vista de directorios por seguridad
+    Options -Indexes
+
+    # Redirigir peticiones /api/endpoint a /api/endpoint.php si el archivo .php existe
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{DOCUMENT_ROOT}/api/$1.php -f
+    RewriteRule ^api/([a-zA-Z0-9_]+)$ api/$1.php [L,QSA]
+</IfModule>
