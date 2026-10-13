@@ -34,7 +34,12 @@ function inicializarTablaAtenciones($db) {
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             INDEX (`dni_paciente`),
             INDEX (`diagnostico`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+        // Asegurar que la collation coincida con la de la BD institucional
+        try {
+            $db->exec("ALTER TABLE atenciones CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        } catch (Exception $eCollation) {}
 
         $cnt = $db->query("SELECT COUNT(*) FROM atenciones")->fetchColumn();
         if (intval($cnt) === 0) {
@@ -81,7 +86,7 @@ function inicializarTablaAtenciones($db) {
             if ($checkCarrera) {
                 // 1. Asignar carrera correspondiente a los estudiantes registrados
                 $db->exec("UPDATE atenciones at
-                    JOIN persona p ON at.dni_paciente = p.dni
+                    JOIN persona p ON at.dni_paciente COLLATE utf8mb4_unicode_ci = p.dni COLLATE utf8mb4_unicode_ci
                     JOIN estudiante est ON est.persona_idpersona = p.idpersona
                     JOIN carrera c ON est.carrera_idcarrera = c.idcarrera
                     SET at.programa = c.nombre_carrera
@@ -90,7 +95,7 @@ function inicializarTablaAtenciones($db) {
 
                 // 2. Asignar 'Otros (Docentes, Administrativos)' a docentes y administrativos
                 $db->exec("UPDATE atenciones at
-                    JOIN persona p ON at.dni_paciente = p.dni
+                    JOIN persona p ON at.dni_paciente COLLATE utf8mb4_unicode_ci = p.dni COLLATE utf8mb4_unicode_ci
                     LEFT JOIN docente doc ON doc.persona_idpersona = p.idpersona
                     LEFT JOIN administrativo adm ON adm.persona_idpersona = p.idpersona
                     SET at.programa = 'Otros (Docentes, Administrativos)'
@@ -108,7 +113,11 @@ function inicializarTablaAtenciones($db) {
                     WHERE programa = 'Docentes / Adm.'");
             }
         } catch (Exception $e2) {
-            // Ignorar si no se pudo actualizar
+            // Fallback seguro
+            try {
+                $db->exec("UPDATE atenciones SET programa = 'Enfermería Técnica' WHERE programa = 'Estudiante' OR programa IS NULL OR programa = ''");
+                $db->exec("UPDATE atenciones SET programa = 'Otros (Docentes, Administrativos)' WHERE programa = 'Docentes / Adm.'");
+            } catch (Exception $e3) {}
         }
     } catch (Exception $e) {
         // Ignorar si no se pudo autoinicializar
@@ -126,50 +135,37 @@ if ($metodo === 'GET') {
 
     try {
         $sql = "SELECT 
-                    at.id,
-                    DATE_FORMAT(at.fecha_atencion, '%d/%m/%Y %H:%i') AS fecha,
-                    at.fecha_atencion,
-                    at.dni_paciente AS dni,
-                    at.paciente_nombre AS paciente,
-                    CASE 
-                        WHEN at.programa IS NOT NULL AND at.programa != '' AND at.programa != 'Estudiante' AND at.programa != 'Docentes / Adm.' 
-                            THEN at.programa
-                        WHEN c.nombre_carrera IS NOT NULL 
-                            THEN c.nombre_carrera
-                        WHEN doc.iddocente IS NOT NULL OR adm.idadministrativo IS NOT NULL 
-                            THEN 'Otros (Docentes, Administrativos)'
-                        ELSE 'Enfermería Técnica'
-                    END AS programa,
-                    at.temperatura AS temp,
-                    at.diagnostico,
-                    at.subtipo,
-                    at.tratamiento,
-                    at.destino,
-                    at.licenciada,
-                    at.observaciones,
-                    at.created_at
-                FROM atenciones at
-                LEFT JOIN persona p ON at.dni_paciente = p.dni
-                LEFT JOIN estudiante est ON est.persona_idpersona = p.idpersona
-                LEFT JOIN carrera c ON est.carrera_idcarrera = c.idcarrera
-                LEFT JOIN docente doc ON doc.persona_idpersona = p.idpersona
-                LEFT JOIN administrativo adm ON adm.persona_idpersona = p.idpersona
+                    id,
+                    DATE_FORMAT(fecha_atencion, '%d/%m/%Y %H:%i') AS fecha,
+                    fecha_atencion,
+                    dni_paciente AS dni,
+                    paciente_nombre AS paciente,
+                    COALESCE(NULLIF(programa, ''), 'Enfermería Técnica') AS programa,
+                    temperatura AS temp,
+                    diagnostico,
+                    subtipo,
+                    tratamiento,
+                    destino,
+                    licenciada,
+                    observaciones,
+                    created_at
+                FROM atenciones 
                 WHERE 1=1";
         $params = [];
 
         if (!empty($filtroDni)) {
-            $sql .= " AND (at.dni_paciente LIKE :dni OR at.paciente_nombre LIKE :nom)";
+            $sql .= " AND (dni_paciente LIKE :dni OR paciente_nombre LIKE :nom)";
             $params[':dni'] = "%$filtroDni%";
             $params[':nom'] = "%$filtroDni%";
         }
 
         if (!empty($filtroDiag) && $filtroDiag !== 'TODOS') {
-            $sql .= " AND (at.diagnostico = :diag OR at.diagnostico LIKE :diagLike)";
+            $sql .= " AND (diagnostico = :diag OR diagnostico LIKE :diagLike)";
             $params[':diag'] = $filtroDiag;
             $params[':diagLike'] = "$filtroDiag%";
         }
 
-        $sql .= " ORDER BY at.fecha_atencion DESC, at.id DESC";
+        $sql .= " ORDER BY fecha_atencion DESC, id DESC";
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
