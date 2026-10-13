@@ -78,13 +78,13 @@
                 <div class="sidebar-top">
                     <h4><i class="fa-solid fa-compass"></i> Navegación Tópico</h4>
                     <ul>
-                        <li class="active" onclick="mostrarSeccion('f1_paciente')"><i class="fa-solid fa-user-plus"></i> <span>Nuevo Paciente</span></li>
+                        <li class="active" onclick="mostrarSeccion('f1_paciente')"><i class="fa-solid fa-hospital-user"></i> <span>Nuevo Paciente</span></li>
                         <li onclick="mostrarSeccion('f2_atencion')"><i class="fa-solid fa-stethoscope"></i> <span>Atención / Triaje</span></li>
-                        <li onclick="mostrarSeccion('f3_historial')"><i class="fa-solid fa-file-medical"></i> <span>Historial Clínico</span></li>
-                        <li onclick="mostrarSeccion('f4_botiquin')"><i class="fa-solid fa-pills"></i> <span>Botiquín y Stock</span></li>
+                        <li onclick="mostrarSeccion('f3_historial')"><i class="fa-solid fa-notes-medical"></i> <span>Historial Clínico</span></li>
+                        <li onclick="mostrarSeccion('f4_botiquin')"><i class="fa-solid fa-kit-medical"></i> <span>Botiquín y Stock</span></li>
                         <li onclick="mostrarSeccion('f5_derivacion')"><i class="fa-solid fa-truck-medical"></i> <span>Derivaciones</span></li>
                         <li onclick="mostrarSeccion('f6_reportes')"><i class="fa-solid fa-chart-pie"></i> <span>Vigilancia MINSA</span></li>
-                        <li id="menuGestUsuarios" onclick="mostrarSeccion('f7_usuarios')"><i class="fa-solid fa-user-gear"></i> <span>Gest. Usuarios</span></li>
+                        <li id="menuGestUsuarios" onclick="mostrarSeccion('f7_usuarios')"><i class="fa-solid fa-users-gear"></i> <span>Gest. Usuarios</span></li>
                     </ul>
                 </div>
 
@@ -108,7 +108,7 @@
                 <!-- FORMULARIO 1: REGISTRO Y FILIACIÓN DEL PACIENTE -->
                 <div id="secF1" class="form-module">
                     <div class="ficha-header">
-                        <h2>REGISTRO Y FILIACIÓN DEL PACIENTE</h2>
+                        <h2><i class="fa-solid fa-hospital-user"></i> REGISTRO Y FILIACIÓN DEL PACIENTE</h2>
                         <p>IESTP Carhuaz - Alta de Alumnos, Docentes y Personal Administrativo</p>
                     </div>
 
@@ -116,7 +116,7 @@
 
                         <!-- DATOS ADMINISTRATIVOS Y DE ATENCIÓN -->
                         <fieldset class="form-section highlight-box">
-                            <legend>Datos de Ingreso y Registro Institucional</legend>
+                            <legend><i class="fa-solid fa-hospital"></i> Datos de Ingreso y Registro Institucional</legend>
                             <div class="form-grid-3">
                                 <div class="input-group">
                                     <label for="f1Establecimiento">Establecimiento de Salud:</label>
@@ -135,7 +135,7 @@
 
                         <!-- I. DATOS DE IDENTIFICACIÓN -->
                         <fieldset class="form-section">
-                            <legend>I. Datos de Identificación del Paciente</legend>
+                            <legend><i class="fa-solid fa-id-card"></i> I. Datos de Identificación del Paciente</legend>
                             <div class="form-grid-3">
                                 <div class="input-group">
                                     <label for="f1Dni">DNI / Documento de Identidad:</label>
@@ -234,7 +234,7 @@
 
                         <!-- II. UBICACIÓN Y RESIDENCIA -->
                         <fieldset class="form-section">
-                            <legend>II. Ubicación y Residencia Actual</legend>
+                            <legend><i class="fa-solid fa-map-location-dot"></i> II. Ubicación y Residencia Actual</legend>
                             <div class="form-grid-3">
                                     <div class="input-group">
                                         <label for="f1Dep">Departamento:</label>
@@ -269,7 +269,7 @@
 
                         <!-- III. DATOS DEL APODERADO O CONTACTO DE EMERGENCIA (PARA ESTUDIANTES) -->
                         <fieldset id="secF1Apoderado" class="form-section highlight-box">
-                            <legend>III. Datos del Apoderado / Familiar / Contacto de Emergencia</legend>
+                            <legend><i class="fa-solid fa-users"></i> III. Datos del Apoderado / Familiar / Contacto de Emergencia</legend>
                             <div class="form-grid-3">
                                 <div class="input-group">
                                     <label for="f1ApoDni">DNI del Apoderado:</label>
@@ -309,8 +309,8 @@
                         </fieldset>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn-save">💾 Guardar Ficha de Paciente</button>
-                            <button type="reset" class="btn-cancel">🧹 Limpiar Formulario</button>
+                            <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> Guardar Ficha de Paciente</button>
+                            <button type="reset" class="btn-cancel"><i class="fa-solid fa-rotate-left"></i> Limpiar Formulario</button>
                         </div>
                     </form>
                 </div>
@@ -318,7 +318,7 @@
                 <!-- FORMULARIO 2: ATENCIÓN CLÍNICA Y TRIAJE -->
                 <div id="secF2" class="form-module hidden">
                     <div class="ficha-header">
-                        <h2>FICHA DE ATENCIÓN CLÍNICA Y TRIAJE</h2>
+                        <h2><i class="fa-solid fa-stethoscope"></i> FICHA DE ATENCIÓN CLÍNICA Y TRIAJE</h2>
                         <p>Evaluación Diagnóstica y Protocolo de Atención en Tópico</p>
                     </div>
 
@@ -327,7 +327,7 @@
                         <label for="f2BuscarDni"><strong>Buscar Paciente por DNI:</strong></label>
                         <div style="display: flex; gap: 10px; margin-top: 5px;">
                             <input type="text" id="f2BuscarDni" data-solo-numeros="true" placeholder="8 dígitos numéricos" maxlength="8" minlength="8" pattern="[0-9]{8}" inputmode="numeric" title="Debe ingresar exactamente 8 dígitos numéricos">
-                            <button type="button" class="btn-primary" onclick="buscarPacienteF2()" style="width: auto;">🔍 Buscar</button>
+                            <button type="button" class="btn-primary" onclick="buscarPacienteF2()" style="width: auto;"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
                         </div>
 
                         <!-- TARJETA DESPLEGABLE CON LOS DATOS ENCONTRADOS -->
@@ -354,7 +354,7 @@
                         
                         <!-- SELECCIÓN DE PROTOCOLO -->
                         <fieldset class="form-section highlight-box" style="margin-top: 15px;">
-                            <legend>Selección de Tipo de Atención</legend>
+                            <legend><i class="fa-solid fa-clipboard-check"></i> Selección de Tipo de Atención</legend>
                             <div class="input-group">
                                 <label for="f2DiagnosticoMain"><strong>TIPO DE DIAGNÓSTICO / EVALUACIÓN:</strong></label>
                                 <select id="f2DiagnosticoMain" required onchange="cambiarFichaAtencion(this.value)">
@@ -367,10 +367,10 @@
 
                         <!-- CONTENEDOR DINÁMICO 1: FICHA DE ATENCIÓN - IRA -->
                         <div id="fichaIRA" class="ficha-dinamica hidden">
-                            <h3 class="sub-title-ficha">FICHA DE ATENCIÓN – INFECCIONES RESPIRATORIAS AGUDAS (IRA)</h3>
+                            <h3 class="sub-title-ficha"><i class="fa-solid fa-lungs"></i> FICHA DE ATENCIÓN – INFECCIONES RESPIRATORIAS AGUDAS (IRA)</h3>
 
                             <fieldset class="form-section">
-                                <legend>1. Datos de Identificación</legend>
+                                <legend><i class="fa-solid fa-id-card"></i> 1. Datos de Identificación</legend>
                                 <div class="form-grid-3">
                                     <div class="input-group">
                                         <label>Establecimiento de Salud:</label>
@@ -410,7 +410,7 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>2. Motivo de Consulta y Anamnesis (Síntomas)</legend>
+                                <legend><i class="fa-solid fa-stethoscope"></i> 2. Motivo de Consulta y Anamnesis (Síntomas)</legend>
                                 <div class="checkbox-group-grid">
                                     <label><input type="checkbox" id="iraSintTos"> Tos</label>
                                     <label><input type="checkbox" id="iraSintFiebre"> Fiebre</label>
@@ -431,28 +431,28 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>3. Evaluación Clínica y Triaje</legend>
+                                <legend><i class="fa-solid fa-heart-pulse"></i> 3. Evaluación Clínica y Triaje</legend>
                                 <div class="form-grid-3">
                                     <div class="input-group">
-                                        <label for="iraTemp">Temperatura (°C):</label>
+                                        <label for="iraTemp"><i class="fa-solid fa-temperature-half"></i> Temperatura (°C):</label>
                                         <input type="number" step="0.1" id="iraTemp" placeholder="37.0">
                                     </div>
                                     <div class="input-group">
-                                        <label for="iraFr">Frecuencia Respiratoria (rpm):</label>
+                                        <label for="iraFr"><i class="fa-solid fa-lungs"></i> Frecuencia Respiratoria (rpm):</label>
                                         <input type="number" id="iraFr" placeholder="18">
                                     </div>
                                     <div class="input-group">
-                                        <label for="iraFc">Frecuencia Cardíaca (ppm):</label>
+                                        <label for="iraFc"><i class="fa-solid fa-heart-pulse"></i> Frecuencia Cardíaca (ppm):</label>
                                         <input type="number" id="iraFc" placeholder="72">
                                     </div>
                                 </div>
                                 <div class="form-grid-3" style="margin-top: 10px;">
                                     <div class="input-group">
-                                        <label for="iraSpo2">Saturación de O₂ (%):</label>
+                                        <label for="iraSpo2"><i class="fa-solid fa-droplet"></i> Saturación de O₂ (%):</label>
                                         <input type="number" id="iraSpo2" placeholder="98">
                                     </div>
                                     <div class="input-group">
-                                        <label for="iraPeso">Peso (kg):</label>
+                                        <label for="iraPeso"><i class="fa-solid fa-weight-scale"></i> Peso (kg):</label>
                                         <input type="number" step="0.1" id="iraPeso" placeholder="60.5">
                                     </div>
                                     <div class="input-group">
@@ -489,7 +489,7 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>4. Clasificación / Diagnóstico IRA</legend>
+                                <legend><i class="fa-solid fa-clipboard-question"></i> 4. Clasificación / Diagnóstico IRA</legend>
                                 <div class="input-group">
                                     <label for="iraClasificacion">Diagnóstico Confirmado:</label>
                                     <select id="iraClasificacion">
@@ -506,7 +506,7 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>5. Conducta y Tratamiento</legend>
+                                <legend><i class="fa-solid fa-pills"></i> 5. Conducta y Tratamiento</legend>
 
                                 <div id="iraContenedorMedicamentos">
                                     <div class="ira-med-row">
@@ -555,7 +555,7 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>6. Consejería y Signos de Alarma</legend>
+                                <legend><i class="fa-solid fa-triangle-exclamation"></i> 6. Consejería y Signos de Alarma</legend>
                                 <div class="form-grid-2">
                                     <div class="input-group">
                                         <label for="iraCuidadosCasa">Cuidados en Casa / Hidratación / Alimentación:</label>
@@ -569,7 +569,7 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>7. Seguimiento y Firma</legend>
+                                <legend><i class="fa-solid fa-signature"></i> 7. Seguimiento y Firma</legend>
                                 <div class="form-grid-3">
                                     <div class="input-group">
                                         <label for="iraProximoControl">Próximo Control:</label>
@@ -597,10 +597,10 @@
 
                         <!-- CONTENEDOR DINÁMICO 2: FICHA DE ATENCIÓN - EDA -->
                         <div id="fichaEDA" class="ficha-dinamica hidden">
-                            <h3 class="sub-title-ficha">FICHA DE ATENCIÓN - ENFERMEDADES DIARREICAS AGUDAS (EDA)</h3>
+                            <h3 class="sub-title-ficha"><i class="fa-solid fa-virus"></i> FICHA DE ATENCIÓN - ENFERMEDADES DIARREICAS AGUDAS (EDA)</h3>
 
                             <fieldset class="form-section">
-                                <legend>1. Datos de Identificación</legend>
+                                <legend><i class="fa-solid fa-id-card"></i> 1. Datos de Identificación</legend>
                                 <div class="form-grid-3">
                                     <div class="input-group">
                                         <label>Establecimiento de Salud:</label>
@@ -640,7 +640,7 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>2. Motivo de Consulta y Anamnesis (Síntomas)</legend>
+                                <legend><i class="fa-solid fa-stethoscope"></i> 2. Motivo de Consulta y Anamnesis (Síntomas)</legend>
                                 <div class="checkbox-group-grid">
                                     <label><input type="checkbox" id="edaSintDiarrea"> Diarrea</label>
                                     <label><input type="checkbox" id="edaSintVomitos"> Vómitos</label>
@@ -677,25 +677,25 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>3. Evaluación Clínica</legend>
+                                <legend><i class="fa-solid fa-heart-pulse"></i> 3. Evaluación Clínica</legend>
 
                                 <div class="form-grid-2">
                                     <div class="input-group">
-                                        <label for="edaTemp">Temperatura (°C):</label>
+                                        <label for="edaTemp"><i class="fa-solid fa-temperature-half"></i> Temperatura (°C):</label>
                                         <input type="number" step="0.1" id="edaTemp" placeholder="Ej. 37.0">
                                     </div>
                                     <div class="input-group">
-                                        <label for="edaFc">Frecuencia Cardíaca (ppm):</label>
+                                        <label for="edaFc"><i class="fa-solid fa-heart-pulse"></i> Frecuencia Cardíaca (ppm):</label>
                                         <input type="number" id="edaFc" placeholder="Ej. 75">
                                     </div>
                                 </div>
                                 <div class="form-grid-2" style="margin-top: 10px;">
                                     <div class="input-group">
-                                        <label for="edaFr">Frecuencia Respiratoria (rpm):</label>
+                                        <label for="edaFr"><i class="fa-solid fa-lungs"></i> Frecuencia Respiratoria (rpm):</label>
                                         <input type="number" id="edaFr" placeholder="Ej. 18">
                                     </div>
                                     <div class="input-group">
-                                        <label for="edaPeso">Peso (kg):</label>
+                                        <label for="edaPeso"><i class="fa-solid fa-weight-scale"></i> Peso (kg):</label>
                                         <input type="number" step="0.1" id="edaPeso" placeholder="Ej. 60.0">
                                     </div>
                                 </div>
@@ -773,7 +773,7 @@
 
                             <!-- 4. CLASIFICACIÓN / DIAGNÓSTICO -->
                             <fieldset class="form-section">
-                                <legend>4. Clasificación / Diagnóstico</legend>
+                                <legend><i class="fa-solid fa-clipboard-question"></i> 4. Clasificación / Diagnóstico</legend>
 
                                 <div class="form-grid-2">
                                     <div class="input-group">
@@ -802,7 +802,7 @@
 
                             <!-- 5. CONDUCTA Y TRATAMIENTO -->
                             <fieldset class="form-section">
-                                <legend>5. Conducta y Tratamiento</legend>
+                                <legend><i class="fa-solid fa-kit-medical"></i> 5. Conducta y Tratamiento</legend>
 
                                 <div class="form-grid-2">
                                     <div class="input-group">
@@ -828,13 +828,13 @@
 
                             <!-- 6. CONSEJERÍA Y SIGNOS DE ALARMA -->
                             <fieldset id="secEdaConsejeria" class="form-section">
-                                <legend>6. Consejería y Signos de Alarma</legend>
+                                <legend><i class="fa-solid fa-triangle-exclamation"></i> 6. Consejería y Signos de Alarma</legend>
 
                                 <div class="form-grid-2">
                                     <div class="consejeria-box">
                                         <label class="consejeria-box-title-blue">Pautas de Prevención e Higiene:</label>
                                         <div style="display: flex; flex-direction: column; gap: 8px;">
-                                            <label style="font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: flex-start; gap: 6px;">
+                                             <label style="font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: flex-start; gap: 6px;">
                                                 <input type="checkbox" id="edaPrevManos" style="margin-top: 2px;"> <strong>Higiene de manos:</strong> Lavado correcto con agua y jabón antes de comer, cocinar y después del baño.
                                             </label>
                                             <label style="font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: flex-start; gap: 6px;">
@@ -861,7 +861,7 @@
                             </fieldset>
 
                             <fieldset class="form-section">
-                                <legend>7. Seguimiento y Firma</legend>
+                                <legend><i class="fa-solid fa-signature"></i> 7. Seguimiento y Firma</legend>
                                 <div class="form-grid-3">
                                     <div class="input-group">
                                         <label for="edaProximoControl">Próximo Control:</label>
@@ -888,7 +888,7 @@
                         </div>
 
                         <div class="form-actions" style="margin-top: 20px;">
-                            <button type="submit" class="btn-save">💾 Guardar Ficha Clínica y Generar Receta</button>
+                            <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> Guardar Ficha Clínica y Generar Receta</button>
                         </div>
                     </form>
                 </div>
@@ -896,17 +896,17 @@
                 <!-- FORMULARIO 3: HISTORIAL DE ATENCIONES -->
                 <div id="secF3" class="form-module hidden">
                     <div class="ficha-header">
-                        <h2>HISTORIAL CLÍNICO Y CONSULTAS</h2>
+                        <h2><i class="fa-solid fa-notes-medical"></i> HISTORIAL CLÍNICO Y CONSULTAS</h2>
                         <p>Búsqueda y Seguimiento Cronológico de Atenciones en Tópico</p>
                     </div>
 
                     <div class="form-grid-3" style="margin-bottom: 15px; align-items: flex-end;">
                         <div class="input-group">
-                            <label for="f3FiltroDni">Filtrar por DNI:</label>
+                            <label for="f3FiltroDni"><i class="fa-solid fa-magnifying-glass"></i> Filtrar por DNI:</label>
                             <input type="text" id="f3FiltroDni" data-solo-numeros="true" maxlength="8" inputmode="numeric" pattern="[0-9]{0,8}" placeholder="Ingrese DNI (8 dígitos)" onkeyup="filtrarTablaF3()">
                         </div>
                         <div class="input-group">
-                            <label for="f3FiltroDiag">Filtrar por Diagnóstico:</label>
+                            <label for="f3FiltroDiag"><i class="fa-solid fa-filter"></i> Filtrar por Diagnóstico:</label>
                             <select id="f3FiltroDiag" onchange="filtrarTablaF3()">
                                 <option value="TODOS">Todos los Casos</option>
                                 <option value="IRA">Solo IRAS</option>
@@ -948,13 +948,13 @@
                 <!-- FORMULARIO 4: CONTROL E INVENTARIO DE BOTIQUÍN -->
                 <div id="secF4" class="form-module hidden">
                     <div class="ficha-header">
-                        <h2>INVENTARIO DE BOTIQUÍN Y MEDICAMENTOS</h2>
+                        <h2><i class="fa-solid fa-kit-medical"></i> INVENTARIO DE BOTIQUÍN Y MEDICAMENTOS</h2>
                         <p>Ingreso de Medicamentos y Consulta de Stock Disponible</p>
                     </div>
 
                     <form id="formF4Medicamento">
                         <fieldset class="form-section">
-                            <legend>I. Registro / Ingreso de Insumo Médico</legend>
+                            <legend><i class="fa-solid fa-circle-plus"></i> I. Registro / Ingreso de Insumo Médico</legend>
                             <div class="form-grid-3">
                                 <div class="input-group">
                                     <label for="f4Codigo">Código Insumo:</label>
@@ -984,13 +984,13 @@
                                 </div>
                                 <div class="input-group">
                                     <label>&nbsp;</label>
-                                    <button type="submit" class="btn-save" style="width: 100%;">➕ Añadir al Botiquín</button>
+                                    <button type="submit" class="btn-save" style="width: 100%;"><i class="fa-solid fa-plus"></i> Añadir al Botiquín</button>
                                 </div>
                             </div>
                         </fieldset>
                     </form>
 
-                    <h3 class="section-title" style="margin: 15px 0 10px 0;">Disponibilidad de Medicamentos en Stock</h3>
+                    <h3 class="section-title" style="margin: 15px 0 10px 0;"><i class="fa-solid fa-boxes-stacked"></i> Disponibilidad de Medicamentos en Stock</h3>
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>
@@ -1013,7 +1013,7 @@
                 <!-- FORMULARIO 5: FICHA DE DERIVACIÓN EXTERNA -->
                 <div id="secF5" class="form-module hidden">
                     <div class="ficha-header">
-                        <h2>HOJA DE DERIVACIÓN Y REFERENCIA EXTERNA</h2>
+                        <h2><i class="fa-solid fa-truck-medical"></i> HOJA DE DERIVACIÓN Y REFERENCIA EXTERNA</h2>
                         <p>Traslado de Pacientes a Centro de Salud u Hospital de Carhuaz</p>
                     </div>
 
@@ -1022,7 +1022,7 @@
                         <label for="f5Dni"><strong>Buscar y Cargar Paciente por DNI:</strong></label>
                         <div style="display: flex; gap: 10px; margin-top: 5px;">
                             <input type="text" id="f5Dni" data-solo-numeros="true" required maxlength="8" minlength="8" pattern="[0-9]{8}" inputmode="numeric" placeholder="8 dígitos numéricos" title="Debe ingresar exactamente 8 dígitos numéricos">
-                            <button type="button" class="btn-primary" onclick="buscarPacienteF5()" style="width: auto;">🔍 Buscar Paciente</button>
+                            <button type="button" class="btn-primary" onclick="buscarPacienteF5()" style="width: auto;"><i class="fa-solid fa-magnifying-glass"></i> Buscar Paciente</button>
                         </div>
 
                         <!-- TARJETA DESPLEGABLE CON DATOS INTEGRADOS DE F1 Y F2 -->
@@ -1061,7 +1061,7 @@
 
                     <form id="formF5Derivacion" style="margin-top: 15px;">
                         <fieldset class="form-section">
-                            <legend>Datos de la Transferencia Externa</legend>
+                            <legend><i class="fa-solid fa-share-from-square"></i> Datos de la Transferencia Externa</legend>
                             <div class="form-grid-3">
                                 <div class="input-group">
                                     <label for="f5Establecimiento">Establecimiento de Destino:</label>
@@ -1162,13 +1162,13 @@
                 <!-- FORMULARIO 7: GESTIÓN DE PERSONAL Y USUARIOS -->
                 <div id="secF7" class="form-module hidden">
                     <div class="ficha-header">
-                        <h2>GESTIÓN DE PERSONAL DE TÓPICO</h2>
+                        <h2><i class="fa-solid fa-users-gear"></i> GESTIÓN DE PERSONAL DE TÓPICO</h2>
                         <p>Registro de Licenciadas en Enfermería y Personal de Apoyo</p>
                     </div>
 
                     <form id="formF7Usuario" autocomplete="off">
                         <fieldset class="form-section">
-                            <legend>Registrar Nuevo Usuario / Personal</legend>
+                            <legend><i class="fa-solid fa-user-plus"></i> Registrar Nuevo Usuario / Personal</legend>
                             <div class="form-grid-3">
                                 <div class="input-group">
                                     <label for="f7Nombre">Nombre Completo:</label>
@@ -1205,11 +1205,11 @@
                             </div>
                         </fieldset>
                         <div class="form-actions">
-                            <button type="submit" class="btn-save">👤 Registrar Personal</button>
+                            <button type="submit" class="btn-save"><i class="fa-solid fa-user-plus"></i> Registrar Personal</button>
                         </div>
                     </form>
 
-                    <h3 class="section-title" style="margin: 15px 0 10px 0;">Personal Habilitado</h3>
+                    <h3 class="section-title" style="margin: 15px 0 10px 0;"><i class="fa-solid fa-id-badge"></i> Personal Habilitado</h3>
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>
@@ -1236,7 +1236,7 @@
     <div id="modalReceta" class="modal-overlay hidden" onclick="if(event.target === this) cerrarModalReceta()">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>FICHA RECOMENDADA Y DOSIFICACIÓN - TÓPICO IESTP CARHUAZ</h3>
+                <h3><i class="fa-solid fa-prescription"></i> FICHA RECOMENDADA Y DOSIFICACIÓN - TÓPICO IESTP CARHUAZ</h3>
                 <button type="button" class="btn-close-modal" onclick="cerrarModalReceta()" title="Cerrar ventana" aria-label="Cerrar">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -1245,7 +1245,7 @@
                 <!-- Se construye dinámicamente con JS -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="cerrarModalReceta()">Cerrar</button>
+                <button type="button" class="btn-secondary" onclick="cerrarModalReceta()"><i class="fa-solid fa-xmark"></i> Cerrar</button>
                 <button type="button" class="btn-primary" onclick="imprimirModal()"><i class="fa-solid fa-print"></i> Imprimir y Aceptar</button>
             </div>
         </div>
@@ -1264,7 +1264,7 @@
                 <!-- Se construye dinámicamente con JS -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="cerrarModalDerivacion()">Cerrar</button>
+                <button type="button" class="btn-secondary" onclick="cerrarModalDerivacion()"><i class="fa-solid fa-xmark"></i> Cerrar</button>
                 <button type="button" class="btn-primary" onclick="imprimirModalDerivacion()"><i class="fa-solid fa-print"></i> Imprimir Hoja de Referencia</button>
             </div>
         </div>
@@ -1283,8 +1283,8 @@
                 <!-- Se construye dinámicamente con JS -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="cerrarModalReportePersonal()">Cerrar</button>
-                <button type="button" class="btn-primary" onclick="imprimirReportePersonal()"><i class="fa-solid fa-print"></i> Imprimir / Exportar PDF</button>
+                <button type="button" class="btn-secondary" onclick="cerrarModalReportePersonal()"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+                <button type="button" class="btn-primary" onclick="imprimirReportePersonal()"><i class="fa-solid fa-file-pdf"></i> Imprimir / Exportar PDF</button>
             </div>
         </div>
     </div>

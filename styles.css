@@ -263,6 +263,17 @@ body {
     color: var(--text-secondary);
 }
 
+.input-group label i {
+    color: var(--primary);
+    opacity: 0.9;
+    margin-right: 4px;
+    font-size: 11px;
+}
+
+body.dark-mode .input-group label i {
+    color: var(--border-focus);
+}
+
 .input-wrapper {
     position: relative;
     display: flex;
@@ -511,9 +522,9 @@ body {
 }
 
 .sidebar li i {
-    width: 18px;
+    width: 20px;
     text-align: center;
-    font-size: 14px;
+    font-size: 15px;
     color: #94a3b8;
     transition: var(--transition-fast);
 }
@@ -725,6 +736,9 @@ body {
     font-weight: 600;
     color: var(--primary);
     padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
@@ -923,6 +937,38 @@ body.dark-mode .btn-remove-med {
 .btn-save:hover {
     background-color: #0f766e;
     box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);
+}
+
+.btn-cancel {
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-cancel:hover {
+    background-color: rgba(239, 68, 68, 0.08);
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+body.dark-mode .btn-cancel {
+    color: var(--text-muted);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .btn-cancel:hover {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border-color: #ef4444;
 }
 
 .form-actions {

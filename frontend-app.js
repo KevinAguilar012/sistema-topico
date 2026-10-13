@@ -262,7 +262,7 @@ function actualizarEstadoUI(conectado = true) {
         badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> BD MySQL Conectada (Node.js API)';
         badge.title = 'Conexión activa con MySQL (http://localhost:3000/api)';
     }
-    if (loginDot) loginDot.innerText = '🟢';
+    if (loginDot) loginDot.innerHTML = '<i class="fa-solid fa-circle" style="color: #22c55e; font-size: 11px;"></i>';
     if (loginText) {
         loginText.innerText = 'Conectada a MySQL (http://localhost:3000/api)';
         loginText.style.color = '#276749';
@@ -1276,18 +1276,23 @@ async function renderizarTablaF3(datos = null) {
         const tipoBadge = esOtros 
             ? `<span class="badge badge-warning" style="font-weight: 600;"><i class="fa-solid fa-user-tie"></i> Docente / Administrativo</span>`
             : `<span class="badge badge-info" style="font-weight: 600;"><i class="fa-solid fa-user-graduate"></i> Estudiante</span>`;
+        const diagBadge = item.diagnostico === 'IRA'
+            ? `<span class="badge badge-danger"><i class="fa-solid fa-lungs"></i> IRA</span>`
+            : item.diagnostico === 'EDA'
+            ? `<span class="badge badge-warning"><i class="fa-solid fa-virus"></i> EDA</span>`
+            : `<span class="badge badge-info">${item.diagnostico || ''}</span>`;
 
         tr.innerHTML = `
             <td>${item.fecha || ''}</td>
             <td><strong>${item.dni || ''}</strong></td>
             <td>${item.paciente || ''}</td>
             <td>${progNorm}</td>
-            <td><span class="badge badge-info">${item.diagnostico || ''}</span></td>
+            <td>${diagBadge}</td>
             <td><span style="font-weight: 500;">${item.subtipo || '-'}</span></td>
             <td>${tipoBadge}</td>
             <td><span style="color: var(--primary); font-weight: 600;">${item.licenciada || 'Lic. de Guardia'}</span></td>
             <td>
-                <button type="button" class="btn-primary" style="padding: 3px 8px; font-size: 11px; width: auto;" onclick="abrirModalRecetaDesdeHistorial(${index})">👁️ Ver Receta</button>
+                <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 11px; width: auto; display: inline-flex; align-items: center; gap: 4px;" onclick="abrirModalRecetaDesdeHistorial(${index})"><i class="fa-solid fa-file-prescription"></i> Ver Receta</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -1448,7 +1453,7 @@ async function renderizarTablaBotiquin() {
         tr.innerHTML = `
             <td><strong>${item.codigo || ''}</strong></td>
             <td>${item.nombre || ''}</td>
-            <td><span class="badge badge-info">${item.categoria || 'General'}</span></td>
+            <td><span class="badge badge-info"><i class="fa-solid fa-capsules"></i> ${item.categoria || 'General'}</span></td>
             <td><strong>${stock} u.</strong></td>
             <td>${item.vencimiento || '-'}</td>
             <td>${estado}</td>
@@ -1483,14 +1488,15 @@ async function renderizarTablaUsuarios() {
         const tr = document.createElement('tr');
         const esAdmin = item.rol === 'admin';
         const badgeRol = esAdmin 
-            ? `<span class="badge" style="background-color: #dc3545; color: white;">Administrador</span>` 
-            : `<span class="badge" style="background-color: #17a2b8; color: white;">Enfermera / Personal</span>`;
+            ? `<span class="badge" style="background-color: #dc3545; color: white;"><i class="fa-solid fa-user-shield"></i> Administrador</span>` 
+            : `<span class="badge" style="background-color: #0d9488; color: white;"><i class="fa-solid fa-user-nurse"></i> Enfermera / Personal</span>`;
+        const iconoTurno = (item.turno || '').toLowerCase().includes('tarde') ? 'fa-moon' : 'fa-sun';
 
         tr.innerHTML = `
             <td><strong>${item.nombre || ''}</strong></td>
             <td>${item.cep || '-'}</td>
             <td><code>${item.usuario || ''}</code></td>
-            <td><span class="badge badge-primary">${item.turno || 'Mañana'}</span></td>
+            <td><span class="badge badge-primary"><i class="fa-solid ${iconoTurno}"></i> ${item.turno || 'Mañana'}</span></td>
             <td>${badgeRol}</td>
         `;
         tbody.appendChild(tr);
