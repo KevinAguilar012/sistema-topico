@@ -79,13 +79,33 @@ function inicializarTablaAtenciones($db) {
         try {
             $checkCarrera = $db->query("SHOW TABLES LIKE 'carrera'")->fetch();
             if ($checkCarrera) {
+                // 1. Asignar carrera correspondiente a los estudiantes registrados
                 $db->exec("UPDATE atenciones at
                     JOIN persona p ON at.dni_paciente = p.dni
                     JOIN estudiante est ON est.persona_idpersona = p.idpersona
                     JOIN carrera c ON est.carrera_idcarrera = c.idcarrera
                     SET at.programa = c.nombre_carrera
-                    WHERE (at.programa = 'Estudiante' OR at.programa = 'Docentes / Adm.')
+                    WHERE (at.programa = 'Estudiante' OR at.programa = 'Docentes / Adm.' OR at.programa IS NULL OR at.programa = '')
                     AND c.nombre_carrera IS NOT NULL");
+
+                // 2. Asignar 'Otros (Docentes, Administrativos)' a docentes y administrativos
+                $db->exec("UPDATE atenciones at
+                    JOIN persona p ON at.dni_paciente = p.dni
+                    LEFT JOIN docente doc ON doc.persona_idpersona = p.idpersona
+                    LEFT JOIN administrativo adm ON adm.persona_idpersona = p.idpersona
+                    SET at.programa = 'Otros (Docentes, Administrativos)'
+                    WHERE (at.programa = 'Estudiante' OR at.programa = 'Docentes / Adm.' OR at.programa IS NULL OR at.programa = '')
+                    AND (doc.iddocente IS NOT NULL OR adm.idadministrativo IS NOT NULL)");
+
+                // 3. Casos remanentes que aún digan 'Estudiante' o estén vacíos -> Enfermería Técnica
+                $db->exec("UPDATE atenciones
+                    SET programa = 'Enfermería Técnica'
+                    WHERE programa = 'Estudiante' OR programa IS NULL OR programa = ''");
+
+                // 4. Casos remanentes que digan 'Docentes / Adm.' -> Otros (Docentes, Administrativos)
+                $db->exec("UPDATE atenciones
+                    SET programa = 'Otros (Docentes, Administrativos)'
+                    WHERE programa = 'Docentes / Adm.'");
             }
         } catch (Exception $e2) {
             // Ignorar si no se pudo actualizar
@@ -106,36 +126,50 @@ if ($metodo === 'GET') {
 
     try {
         $sql = "SELECT 
-                    id,
-                    DATE_FORMAT(fecha_atencion, '%d/%m/%Y %H:%i') AS fecha,
-                    fecha_atencion,
-                    dni_paciente AS dni,
-                    paciente_nombre AS paciente,
-                    programa,
-                    temperatura AS temp,
-                    diagnostico,
-                    subtipo,
-                    tratamiento,
-                    destino,
-                    licenciada,
-                    observaciones,
-                    created_at
-                FROM atenciones WHERE 1=1";
+                    at.id,
+                    DATE_FORMAT(at.fecha_atencion, '%d/%m/%Y %H:%i') AS fecha,
+                    at.fecha_atencion,
+                    at.dni_paciente AS dni,
+                    at.paciente_nombre AS paciente,
+                    CASE 
+                        WHEN at.programa IS NOT NULL AND at.programa != '' AND at.programa != 'Estudiante' AND at.programa != 'Docentes / Adm.' 
+                            THEN at.programa
+                        WHEN c.nombre_carrera IS NOT NULL 
+                            THEN c.nombre_carrera
+                        WHEN doc.iddocente IS NOT NULL OR adm.idadministrativo IS NOT NULL 
+                            THEN 'Otros (Docentes, Administrativos)'
+                        ELSE 'Enfermería Técnica'
+                    END AS programa,
+                    at.temperatura AS temp,
+                    at.diagnostico,
+                    at.subtipo,
+                    at.tratamiento,
+                    at.destino,
+                    at.licenciada,
+                    at.observaciones,
+                    at.created_at
+                FROM atenciones at
+                LEFT JOIN persona p ON at.dni_paciente = p.dni
+                LEFT JOIN estudiante est ON est.persona_idpersona = p.idpersona
+                LEFT JOIN carrera c ON est.carrera_idcarrera = c.idcarrera
+                LEFT JOIN docente doc ON doc.persona_idpersona = p.idpersona
+                LEFT JOIN administrativo adm ON adm.persona_idpersona = p.idpersona
+                WHERE 1=1";
         $params = [];
 
         if (!empty($filtroDni)) {
-            $sql .= " AND (dni_paciente LIKE :dni OR paciente_nombre LIKE :nom)";
+            $sql .= " AND (at.dni_paciente LIKE :dni OR at.paciente_nombre LIKE :nom)";
             $params[':dni'] = "%$filtroDni%";
             $params[':nom'] = "%$filtroDni%";
         }
 
         if (!empty($filtroDiag) && $filtroDiag !== 'TODOS') {
-            $sql .= " AND (diagnostico = :diag OR diagnostico LIKE :diagLike)";
+            $sql .= " AND (at.diagnostico = :diag OR at.diagnostico LIKE :diagLike)";
             $params[':diag'] = $filtroDiag;
             $params[':diagLike'] = "$filtroDiag%";
         }
 
-        $sql .= " ORDER BY fecha_atencion DESC, id DESC";
+        $sql .= " ORDER BY at.fecha_atencion DESC, at.id DESC";
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
@@ -168,6 +202,30 @@ if ($metodo === 'POST') {
 
     if (empty($dni) || empty($diagnostico)) {
         responderJSON(["error" => true, "mensaje" => "DNI y Diagnóstico son obligatorios."], 400);
+    }
+
+    // Si el programa viene como 'Estudiante', 'Docentes / Adm.' o vacío, resolver el nombre real
+    if (empty($programa) || $programa === 'Estudiante' || $programa === 'Docentes / Adm.') {
+        try {
+            $stmtProg = $db->prepare("SELECT c.nombre_carrera, doc.iddocente, adm.idadministrativo
+                FROM persona p
+                LEFT JOIN estudiante est ON est.persona_idpersona = p.idpersona
+                LEFT JOIN carrera c ON est.carrera_idcarrera = c.idcarrera
+                LEFT JOIN docente doc ON doc.persona_idpersona = p.idpersona
+                LEFT JOIN administrativo adm ON adm.persona_idpersona = p.idpersona
+                WHERE p.dni = :dni LIMIT 1");
+            $stmtProg->execute([':dni' => $dni]);
+            $rowProg = $stmtProg->fetch();
+            if ($rowProg && !empty($rowProg['nombre_carrera'])) {
+                $programa = $rowProg['nombre_carrera'];
+            } else if ($rowProg && (!empty($rowProg['iddocente']) || !empty($rowProg['idadministrativo']))) {
+                $programa = 'Otros (Docentes, Administrativos)';
+            } else {
+                $programa = ($programa === 'Docentes / Adm.') ? 'Otros (Docentes, Administrativos)' : 'Enfermería Técnica';
+            }
+        } catch (Exception $eP) {
+            $programa = 'Enfermería Técnica';
+        }
     }
 
     try {

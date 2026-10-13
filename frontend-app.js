@@ -828,7 +828,7 @@ async function buscarPacienteF2() {
                 nombreCompleto: nomComp.trim().replace(/^,/, ''),
                 edad: pacBD.edad || 20,
                 genero: pacBD.genero || 'No precisa',
-                programa: pacBD.programa || 'Enfermería Técnica',
+                programa: normalizarNombrePrograma(pacBD.programa) || 'Enfermería Técnica',
                 domicilio: pacBD.domicilio || 'Carhuaz',
                 apoderado: apoderadoNom
             };
@@ -1032,7 +1032,7 @@ function mostrarModalReceta(atencion) {
         <div style="border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; margin-bottom: 8px;">
             <p><strong>Fecha:</strong> ${atencion.fecha}</p>
             <p><strong>Paciente:</strong> ${atencion.paciente} | <strong>DNI:</strong> ${atencion.dni}</p>
-            <p><strong>Área / Programa:</strong> ${atencion.programa}</p>
+            <p><strong>Área / Programa:</strong> ${normalizarNombrePrograma(atencion.programa)}</p>
             <p><strong>Diagnóstico:</strong> ${atencion.diagnostico} (${atencion.subtipo})</p>
         </div>
         <h4 style="color: var(--primary); margin-bottom: 5px;">Prescripción y Recomendaciones:</h4>
@@ -1106,7 +1106,7 @@ async function buscarPacienteF5() {
         const elProg = document.getElementById('f5Programa');
         const elEdad = document.getElementById('f5EdadHc');
         if (elNom) elNom.value = nomComp;
-        if (elProg) elProg.value = pacBD.programa || 'Enfermería Técnica';
+        if (elProg) elProg.value = normalizarNombrePrograma(pacBD.programa) || 'Enfermería Técnica';
         if (elEdad) elEdad.value = `${edad} | ${hc}`;
 
         if (ultimaAtencion) {
@@ -1185,7 +1185,7 @@ function mostrarModalDerivacion(datos) {
                     <div><strong>DNI:</strong> ${datos.dni}</div>
                     <div><strong>N.° Historia Clínica:</strong> ${datos.hc}</div>
                     <div><strong>Paciente:</strong> ${datos.nomComp}</div>
-                    <div><strong>Programa / Condición:</strong> ${p.programa || 'Enfermería Técnica'}</div>
+                    <div><strong>Programa / Condición:</strong> ${normalizarNombrePrograma(p.programa) || 'Enfermería Técnica'}</div>
                     <div><strong>Edad / Género:</strong> ${datos.edad} | ${p.genero || 'No precisa'}</div>
                     <div><strong>Teléfono:</strong> ${p.telefono || 'Sin teléfono registrado'}</div>
                 </div>
@@ -1271,7 +1271,8 @@ async function renderizarTablaF3(datos = null) {
 
     lista.forEach((item, index) => {
         const tr = document.createElement('tr');
-        const esOtros = (item.programa || '').includes('Otros') || (item.programa || '').includes('Docentes');
+        const progNorm = normalizarNombrePrograma(item.programa);
+        const esOtros = progNorm.includes('Otros') || progNorm.includes('Docentes');
         const tipoBadge = esOtros 
             ? `<span class="badge badge-warning" style="font-weight: 600;"><i class="fa-solid fa-user-tie"></i> Docente / Administrativo</span>`
             : `<span class="badge badge-info" style="font-weight: 600;"><i class="fa-solid fa-user-graduate"></i> Estudiante</span>`;
@@ -1280,7 +1281,7 @@ async function renderizarTablaF3(datos = null) {
             <td>${item.fecha || ''}</td>
             <td><strong>${item.dni || ''}</strong></td>
             <td>${item.paciente || ''}</td>
-            <td>${item.programa || ''}</td>
+            <td>${progNorm}</td>
             <td><span class="badge badge-info">${item.diagnostico || ''}</span></td>
             <td><span style="font-weight: 500;">${item.subtipo || '-'}</span></td>
             <td>${tipoBadge}</td>
@@ -1349,7 +1350,7 @@ async function generarReportePersonalAtenciones() {
             <td style="padding: 8px; font-size: 12px;">${item.fecha || ''}</td>
             <td style="padding: 8px; font-size: 12px;"><strong>${item.dni || ''}</strong></td>
             <td style="padding: 8px; font-size: 12px;">${item.paciente || ''}</td>
-            <td style="padding: 8px; font-size: 12px;">${item.programa || ''}</td>
+            <td style="padding: 8px; font-size: 12px;">${normalizarNombrePrograma(item.programa)}</td>
             <td style="padding: 8px; font-size: 12px;"><strong>${item.diagnostico || ''}</strong> (${item.subtipo || '-'})</td>
             <td style="padding: 8px; font-size: 11px;">${item.tratamiento || '-'}</td>
         </tr>
